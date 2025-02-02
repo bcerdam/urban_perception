@@ -1,6 +1,5 @@
 import torch
 import utils
-import tqdm
 import argparse
 from torchvision.models import resnet50
 from utils import crop_from_bottom, plot_tuple
@@ -44,31 +43,27 @@ def train_one_epoch(epoch_index, num_epochs):
     running_loss = 0.
     last_loss = 0.
 
-    with tqdm.tqdm(total=len(train_dataloader), desc=f"Epoch {epoch_index}/{num_epochs}") as pbar:
-        for batch_idx, batch in enumerate(train_dataloader):
-            left_images_batch = batch[0]
-            right_images_batch = batch[1]
-            labels_batch = batch[2].unsqueeze(dim=1)
+    for batch_idx, batch in enumerate(train_dataloader):
+        left_images_batch = batch[0]
+        right_images_batch = batch[1]
+        labels_batch = batch[2].unsqueeze(dim=1)
 
-            optimizer.zero_grad()
+        optimizer.zero_grad()
 
-            left_scores_batch = model.forward(left_images_batch, 64)
-            right_scores_batch = model.forward(right_images_batch, 64)
+        left_scores_batch = model.forward(left_images_batch, 64)
+        right_scores_batch = model.forward(right_images_batch, 64)
 
-            loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1)
+        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1)
 
-            # gradients
-            loss_batch.backward()
-            # update weights
-            optimizer.step()
+        # gradients
+        loss_batch.backward()
+        # update weights
+        optimizer.step()
 
-            running_loss += loss_batch.item()
-            last_loss = running_loss / (batch_idx + 1)  # loss per batch
+        running_loss += loss_batch.item()
+        last_loss = running_loss / (batch_idx + 1)  # loss per batch
 
-            pbar.set_postfix(loss=last_loss)
-            pbar.update(1)
-
-        print(f'Epoch: {epoch_index}/{num_epochs}, Loss: {last_loss}')
+    print(f'Epoch: {epoch_index}/{num_epochs}, Loss: {last_loss}')
     return last_loss
 
 
