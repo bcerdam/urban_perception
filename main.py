@@ -8,6 +8,9 @@ from RawFeat import RawFeat
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
+# CUDA
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # Transforms
 transform = transforms.Compose([
     transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
@@ -33,7 +36,7 @@ validation_dataloader = DataLoader(validation, batch_size=64, shuffle=True)
 
 # Model
 model = resnet50(weights='DEFAULT')
-model = RawFeat(model)
+model = RawFeat(model).to(device)
 
 # Optimizer (Temporary, paper does not specify which to use)
 optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
@@ -44,16 +47,16 @@ def train_one_epoch(epoch_index, num_epochs):
     last_loss = 0.
 
     for batch_idx, batch in enumerate(train_dataloader):
-        left_images_batch = batch[0]
-        right_images_batch = batch[1]
-        labels_batch = batch[2].unsqueeze(dim=1)
+        left_images_batch = batch[0].to(device)
+        right_images_batch = batch[1].to(device)
+        labels_batch = batch[2].unsqueeze(dim=1).to(device)
 
         optimizer.zero_grad()
 
         left_scores_batch = model.forward(left_images_batch, 64)
         right_scores_batch = model.forward(right_images_batch, 64)
 
-        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1)
+        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1, device)
 
         # gradients
         loss_batch.backward()
