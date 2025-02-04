@@ -47,7 +47,6 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
     last_loss = 0.
 
     for batch_idx, batch in enumerate(train_dataloader):
-        print(batch_idx)
         left_images_batch = batch[0].to(device)
         right_images_batch = batch[1].to(device)
         labels_batch = batch[2].unsqueeze(dim=1).to(device)

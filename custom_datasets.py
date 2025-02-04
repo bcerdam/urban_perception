@@ -11,6 +11,9 @@ class PP2Dataset(Dataset):
         self.locations_df = pd.read_csv(locations_path, sep='\t')
         self.places_df = pd.read_csv(places_path, sep='\t')
 
+        valid_choices = ['left', 'equal', 'right']
+        self.votes_df = self.votes_df[self.votes_df['choice'].isin(valid_choices)]
+
         self.votes_df['choice'] = self.votes_df['choice'].replace({'left': 1, 'right': -1, 'equal': 0})
         self.votes_df['study_id'] = self.votes_df['study_id'].replace\
             ({'50a68a51fdc9f05596000002': 'safer',
