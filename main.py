@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # plot_tuple(test)
 
     # Split
-    train, validation = torch.utils.data.random_split(pp2, [int(len(pp2) * 0.75) + 1, int(len(pp2) * 0.25)])
+    train, validation = torch.utils.data.random_split(pp2, [int(len(pp2) * 0.75), int(len(pp2) * 0.25)])
 
     # Dataloaders
     train_dataloader = DataLoader(train, batch_size=64, shuffle=True)
