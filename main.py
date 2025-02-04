@@ -8,41 +8,41 @@ from RawFeat import RawFeat
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-# CUDA
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# # CUDA
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#
+# # Transforms
+# transform = transforms.Compose([
+#     transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
+#     transforms.Resize((224, 224), antialias=True)
+# ])
+#
+# # Dataset
+# pp2 = PP2Dataset('data/cleaned_votes.tsv', 'data/cleaned_locations.tsv',
+#                  'data/places.tsv', 'data/images', transform=transform)
+#
+# # Visualization
+# # test = pp2[0]
+# # plot_tuple(test)
+#
+# # Split
+# train, validation = torch.utils.data.random_split(pp2, [int(len(pp2)*0.75)+1, int(len(pp2)*0.25)])
+#
+# # Dataloaders
+# train_dataloader = DataLoader(train, batch_size=64, shuffle=True)
+# validation_dataloader = DataLoader(validation, batch_size=64, shuffle=True)
+#
+# # Training loop
+#
+# # Model
+# model = resnet50(weights='DEFAULT')
+# model = RawFeat(model).to(device)
+#
+# # Optimizer (Temporary, paper does not specify which to use)
+# optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-# Transforms
-transform = transforms.Compose([
-    transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
-    transforms.Resize((224, 224), antialias=True)
-])
 
-# Dataset
-pp2 = PP2Dataset('data/cleaned_votes.tsv', 'data/cleaned_locations.tsv',
-                 'data/places.tsv', 'data/images', transform=transform)
-
-# Visualization
-# test = pp2[0]
-# plot_tuple(test)
-
-# Split
-train, validation = torch.utils.data.random_split(pp2, [int(len(pp2)*0.75)+1, int(len(pp2)*0.25)])
-
-# Dataloaders
-train_dataloader = DataLoader(train, batch_size=64, shuffle=True)
-validation_dataloader = DataLoader(validation, batch_size=64, shuffle=True)
-
-# Training loop
-
-# Model
-model = resnet50(weights='DEFAULT')
-model = RawFeat(model).to(device)
-
-# Optimizer (Temporary, paper does not specify which to use)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-
-def train_one_epoch(epoch_index, num_epochs):
+def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
     running_loss = 0.
     last_loss = 0.
 
@@ -70,9 +70,9 @@ def train_one_epoch(epoch_index, num_epochs):
     return last_loss
 
 
-def train_model(num_epochs):
+def train_model(num_epochs, train_dataloader, device, optimizer, model):
     for epoch_index in range(1, num_epochs + 1):
-        train_one_epoch(epoch_index, num_epochs)
+        train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model)
 
 
 if __name__ == "__main__":
@@ -80,4 +80,38 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, required=True, help="Number of epochs to train the model")
     args = parser.parse_args()
     num_epochs = args.epochs
-    train_model(num_epochs)
+
+    # CUDA
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Transforms
+    transform = transforms.Compose([
+        transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
+        transforms.Resize((224, 224), antialias=True)
+    ])
+
+    # Dataset
+    pp2 = PP2Dataset('data/cleaned_votes.tsv', 'data/cleaned_locations.tsv',
+                     'data/places.tsv', 'data/images', transform=transform)
+
+    # Visualization
+    # test = pp2[0]
+    # plot_tuple(test)
+
+    # Split
+    train, validation = torch.utils.data.random_split(pp2, [int(len(pp2) * 0.75) + 1, int(len(pp2) * 0.25)])
+
+    # Dataloaders
+    train_dataloader = DataLoader(train, batch_size=64, shuffle=True)
+    validation_dataloader = DataLoader(validation, batch_size=64, shuffle=True)
+
+    # Training loop
+
+    # Model
+    model = resnet50(weights='DEFAULT')
+    model = RawFeat(model).to(device)
+
+    # Optimizer (Temporary, paper does not specify which to use)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+    train_model(num_epochs, train_dataloader, device, optimizer, model)
