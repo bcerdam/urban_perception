@@ -53,7 +53,6 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
 
         optimizer.zero_grad()
 
-        print(left_images_batch.shape[0])
         left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
         right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
