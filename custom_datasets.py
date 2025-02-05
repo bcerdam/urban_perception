@@ -3,11 +3,11 @@ import os
 from utils import truncate_floats
 from torchvision.io import read_image
 from torch.utils.data import Dataset, DataLoader
-
+pd.set_option('future.no_silent_downcasting', True)
 
 class PP2Dataset(Dataset):
     def __init__(self, votes_path, locations_path, places_path, img_dir, transform=None, target_transform=None):
-        self.votes_df = pd.read_csv(votes_path, sep='\t')
+        self.votes_df = pd.read_csv(votes_path, sep='\t', nrows=1000)
         self.locations_df = pd.read_csv(locations_path, sep='\t')
         self.places_df = pd.read_csv(places_path, sep='\t')
 
