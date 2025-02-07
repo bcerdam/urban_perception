@@ -25,6 +25,8 @@ class PP2Dataset(Dataset):
              '5217c351ad93a7d3e7b07a64': 'more beautiful'
             })
 
+        self.votes_df = self.votes_df[self.votes_df['study_id'] == 'safer']
+
         self.img_labels = self.votes_df['choice']
         self.img_dir = img_dir
         self.transform = transform
