@@ -123,7 +123,11 @@ if __name__ == "__main__":
     model = resnet50(weights='DEFAULT')
     model = RawFeat(model).to(device)
 
-    # Optimizer (Temporary, paper does not specify which to use)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    # Optimizer
+    # optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
 
     train_model(num_epochs, train_dataloader, validation_dataloader, device, optimizer, model)
+
+

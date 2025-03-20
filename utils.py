@@ -74,3 +74,5 @@ def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w,
     win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w)
     tie = torch.max(torch.tensor(0, device=device), torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t)
     return torch.mean(torch.add(win_lose, tie))
+
+

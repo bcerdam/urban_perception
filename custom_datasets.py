@@ -68,5 +68,5 @@ class PP2Dataset(Dataset):
         if self.target_transform:
             label = self.target_transform(label)
 
-        # return left_image, right_image, label, study_question, left_place_name, right_place_name
-        return left_image, right_image, label
+        return left_image, right_image, label, study_question, left_place_name, right_place_name
+        # return left_image, right_image, label
