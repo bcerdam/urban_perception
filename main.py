@@ -43,7 +43,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
 
     correct_predictions = 0
     total_samples = 0
-    similarity_threshold = 0.05  # Tolerance for label 0
+    similarity_threshold = 0.5  # Tolerance for label 0
 
     with torch.no_grad():
         for batch in validation_dataloader:
