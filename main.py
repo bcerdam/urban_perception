@@ -85,7 +85,9 @@ def train_model(num_epochs, train_dataloader, validation_dataloader, device, opt
 
 
 
+
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
     parser.add_argument('--epochs', type=int, required=True, help="Number of epochs to train the model")
     args = parser.parse_args()
@@ -129,5 +131,9 @@ if __name__ == "__main__":
 
 
     train_model(num_epochs, train_dataloader, validation_dataloader, device, optimizer, model)
+
+
+
+
 
 

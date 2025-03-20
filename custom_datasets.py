@@ -6,9 +6,9 @@ from torch.utils.data import Dataset, DataLoader
 pd.set_option('future.no_silent_downcasting', True)
 
 class PP2Dataset(Dataset):
-    def __init__(self, votes_path, locations_path, places_path, img_dir, transform=None, target_transform=None):
-        # self.votes_df = pd.read_csv(votes_path, sep='\t', nrows=1000)
-        self.votes_df = pd.read_csv(votes_path, sep='\t')
+    def __init__(self, votes_path, locations_path, places_path, img_dir, transform=None):
+        self.votes_df = pd.read_csv(votes_path, sep='\t').sample(n=25000, random_state=42)
+        # self.votes_df = pd.read_csv(votes_path, sep='\t')
         self.locations_df = pd.read_csv(locations_path, sep='\t')
         self.places_df = pd.read_csv(places_path, sep='\t')
 
@@ -30,7 +30,6 @@ class PP2Dataset(Dataset):
         self.img_labels = self.votes_df['choice']
         self.img_dir = img_dir
         self.transform = transform
-        self.target_transform = target_transform
 
     def __len__(self):
         return len(self.img_labels)
@@ -41,6 +40,7 @@ class PP2Dataset(Dataset):
 
         left_place_id = self.locations_df[self.locations_df['_id'] == left_image_id]['place_id'].iloc[0]
         right_place_id = self.locations_df[self.locations_df['_id'] == right_image_id]['place_id'].iloc[0]
+
         left_place_name = self.places_df[self.places_df['_id'] == left_place_id]['place_name'].iloc[0].replace(" ", "")
         right_place_name = self.places_df[self.places_df['_id'] == right_place_id]['place_name'].iloc[0].replace(" ", "")
 
@@ -65,8 +65,6 @@ class PP2Dataset(Dataset):
         if self.transform:
             left_image = self.transform(left_image)
             right_image = self.transform(right_image)
-        if self.target_transform:
-            label = self.target_transform(label)
 
         return left_image, right_image, label, study_question, left_place_name, right_place_name
         # return left_image, right_image, label
