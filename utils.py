@@ -71,9 +71,13 @@ def crop_from_bottom(image, crop_pixels):
     return F.to_tensor(image)
 
 def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
-    win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w)
+    # win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w)
     # tie = torch.max(torch.tensor(0, device=device), torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t)
     # return torch.mean(torch.add(win_lose, tie))
-    return torch.mean(win_lose)
+
+    win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w*torch.abs(labels_batch))
+    tie = torch.max(torch.tensor(0, device=device), (torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t) * (1 - torch.abs(labels_batch)))
+
+    return torch.mean(torch.add(win_lose, tie))
 
 
