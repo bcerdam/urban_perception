@@ -10,12 +10,12 @@ class RawFeat(nn.Module):
         for param in self.resnet50_4f.parameters():
             param.requires_grad = False
 
-        # self.fc1 = nn.Linear(2048, 4096)
-        self.fc1 = nn.Linear(2048, 64)
-        # self.fc2 = nn.Linear(4096, 1)
-        self.fc2 = nn.Linear(64, 1)
+        self.fc1 = nn.Linear(2048, 4096)
+        # self.fc1 = nn.Linear(2048, 64)
+        self.fc2 = nn.Linear(4096, 1)
+        # self.fc2 = nn.Linear(64, 1)
         self.relu = nn.ReLU()
-        self.drop = nn.Dropout(0.75)
+        self.drop = nn.Dropout(0.3)
 
     def forward(self, image, batch_size):
 
