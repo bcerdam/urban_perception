@@ -10,7 +10,6 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
-    model.train()
     running_loss = 0.
     last_loss = 0.
 
