@@ -12,6 +12,9 @@ from torchvision import transforms
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
     running_loss = 0.
     last_loss = 0.
+    similarity_threshold = 0.05  # Tolerance for label 0
+    correct_predictions = 0
+    total_samples = 0
 
     for batch_idx, batch in enumerate(train_dataloader):
         left_images_batch = batch[0].to(device)
@@ -33,7 +36,18 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
         running_loss += loss_batch.item()
         last_loss = running_loss / (batch_idx + 1)  # loss per batch
 
-    print(f'Epoch: {epoch_index}/{num_epochs}, Train Loss: {last_loss}')
+        left_scores = left_scores_batch.squeeze()
+        right_scores = right_scores_batch.squeeze()
+        predictions = torch.zeros_like(labels_batch.squeeze())
+        predictions[left_scores > right_scores] = -1
+        predictions[left_scores < right_scores] = 1
+        predictions[torch.abs(left_scores - right_scores) < similarity_threshold] = 0
+
+        correct_predictions += (predictions == labels_batch.squeeze()).sum().item()
+        total_samples += labels_batch.squeeze().shape[0]
+
+    accuracy = (correct_predictions / total_samples) * 100
+    print(f'Epoch: {epoch_index}/{num_epochs}, Train Loss: {last_loss}, Train Accuracy: {accuracy:.2f}%')
     return last_loss
 
 def validate_model(epoch_index, num_epochs, validation_dataloader, device, model):
@@ -42,7 +56,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
 
     correct_predictions = 0
     total_samples = 0
-    similarity_threshold = 0.5  # Tolerance for label 0
+    similarity_threshold = 0.05  # Tolerance for label 0
 
     with torch.no_grad():
         for batch_idx, batch in enumerate(validation_dataloader):
@@ -61,6 +75,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             left_scores = left_scores_batch.squeeze()
             right_scores = right_scores_batch.squeeze()
             predictions = torch.zeros_like(labels_batch.squeeze())
+
             predictions[left_scores > right_scores] = -1
             predictions[left_scores < right_scores] = 1
             predictions[torch.abs(left_scores - right_scores) < similarity_threshold] = 0
@@ -69,7 +84,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             total_samples += labels_batch.squeeze().shape[0]
 
     accuracy = (correct_predictions / total_samples) * 100
-    print(f'Epoch: {epoch_index}/{num_epochs}, Validation Loss: {last_loss}, Accuracy: {accuracy:.2f}%')
+    print(f'Epoch: {epoch_index}/{num_epochs}, Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%')
 
     return last_loss
 
