@@ -2,7 +2,7 @@ import torch
 import utils
 import argparse
 import os
-from torchvision.models import resnet50
+from torchvision.models import resnet50, resnet18
 from utils import crop_from_bottom, plot_tuple
 from custom_datasets import PP2Dataset
 from RawFeat import RawFeat
@@ -121,7 +121,10 @@ if __name__ == "__main__":
     # Training loop
 
     # Model
-    model = resnet50(weights='DEFAULT')
+    # model = resnet50(weights='DEFAULT')
+    # model = RawFeat(model).to(device)
+
+    model = resnet18(weights='DEFAULT')
     model = RawFeat(model).to(device)
 
     # Optimizer
