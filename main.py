@@ -26,7 +26,7 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
         left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
         right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
-        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1, device)
+        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
 
         # gradients
         loss_batch.backward()
@@ -67,7 +67,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
             right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
-            loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1, device)
+            loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
 
             running_loss += loss_batch.item()
             last_loss = running_loss / (batch_idx + 1)
@@ -106,7 +106,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     num_epochs = args.epochs
 
-    #num_epochs = 1
+
+    # num_epochs = 1
 
     # CUDA
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
