@@ -12,9 +12,9 @@ class RawFeat(nn.Module):
             param.requires_grad = False
 
         # self.fc1 = nn.Linear(2048, 4096)
-        self.fc1 = nn.Linear(512, 64)
+        self.fc1 = nn.Linear(512, 8)
         # self.fc2 = nn.Linear(4096, 1)
-        self.fc2 = nn.Linear(64, 1)
+        self.fc2 = nn.Linear(8, 1)
         self.relu = nn.ReLU()
         # self.drop = nn.Dropout(0.3)
         self.drop = nn.Dropout(0.75)
