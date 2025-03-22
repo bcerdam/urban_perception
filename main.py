@@ -12,7 +12,7 @@ from torchvision import transforms
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
     running_loss = 0.
     last_loss = 0.
-    similarity_threshold = 0.05  # Tolerance for label 0
+    similarity_threshold = 0.15  # Tolerance for label 0
     correct_predictions = 0
     total_samples = 0
 
@@ -26,7 +26,7 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
         left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
         right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
-        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1, device)
+        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 0.05, 0.05, device)
 
         # gradients
         loss_batch.backward()
@@ -56,7 +56,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
 
     correct_predictions = 0
     total_samples = 0
-    similarity_threshold = 0.05  # Tolerance for label 0
+    similarity_threshold = 0.15  # Tolerance for label 0
 
     with torch.no_grad():
         for batch_idx, batch in enumerate(validation_dataloader):
@@ -67,7 +67,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
             right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
-            loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 1, device)
+            loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 0.05, 0.05, device)
 
             running_loss += loss_batch.item()
             last_loss = running_loss / (batch_idx + 1)
@@ -99,13 +99,15 @@ def train_model(num_epochs, train_dataloader, validation_dataloader, device, opt
 
 
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
     parser.add_argument('--epochs', type=int, required=True, help="Number of epochs to train the model")
     args = parser.parse_args()
     num_epochs = args.epochs
+
+
+    # num_epochs = 1
 
     # CUDA
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
