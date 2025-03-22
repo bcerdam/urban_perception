@@ -8,6 +8,8 @@ from custom_datasets import PP2Dataset
 from RawFeat import RawFeat
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from sklearn.model_selection import train_test_split
+import pandas as pd
 
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
     running_loss = 0.
@@ -104,56 +106,91 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
     parser.add_argument('--epochs', type=int, required=True, help="Number of epochs to train the model")
     args = parser.parse_args()
-    num_epochs = args.epochs
+    NUM_EPOCHS = args.epochs
 
-
-
-    # num_epochs = 1
+    # hp
+    SAMPLE_SIZE = 5000
+    locations_path = 'data/cleaned_locations.tsv'
+    places_path = 'data/places.tsv'
+    img_dir = 'data/images'
 
     # CUDA
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Transforms
     transform = transforms.Compose([
         transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
         transforms.Resize((224, 224), antialias=True)
     ])
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # Dataset
-    pp2 = PP2Dataset('data/cleaned_votes.tsv', 'data/cleaned_locations.tsv',
-                     'data/places.tsv', 'data/images', transform=transform)
+    # Datasets
+    votes_df = (
+        pd.read_csv('data/cleaned_votes.tsv', sep='\t')
+        .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
+    )
+    all_images = set(votes_df["left"]).union(set(votes_df["right"]))
+    train_images, val_images = train_test_split(list(all_images), test_size=0.25, random_state=42)
+    train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
+    val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
 
-    # Visualization
-    # test = pp2[0]
-    # plot_tuple(test)
+    train_size = int(SAMPLE_SIZE * 0.75)
+    validation_size = SAMPLE_SIZE - train_size
 
-    # Split
-    train_size = int(len(pp2) * 0.75)
-    validation_size = len(pp2) - train_size
-    train, validation = torch.utils.data.random_split(pp2, [train_size, validation_size])
+    pp2_train = PP2Dataset(train_df, locations_path, places_path, img_dir, train_size, transform=transform)
+    pp2_validation = PP2Dataset(val_df, locations_path, places_path, img_dir, validation_size, transform=transform)
 
     # Dataloaders
-    train_dataloader = DataLoader(train, batch_size=64, shuffle=True)
-    validation_dataloader = DataLoader(validation, batch_size=64, shuffle=True)
+    train_dataloader = DataLoader(pp2_train, batch_size=64, shuffle=True)
+    validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
 
-    # Training loop
-
-    # Model
+    # Feature extractor
     # model = resnet50(weights='DEFAULT')
     # model = RawFeat(model).to(device)
-
     model = resnet18(weights='DEFAULT')
     model = RawFeat(model).to(device)
 
-    # Optimizer
-    # optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
+'''
+Local
+'''
 
-    train_model(num_epochs, train_dataloader, validation_dataloader, device, optimizer, model)
-
-
-
-
+# NUM_EPOCHS = 1
+# SAMPLE_SIZE = 100
+# locations_path = 'data/cleaned_locations.tsv'
+# places_path = 'data/places.tsv'
+# img_dir = 'data/images'
+#
+#
+# transform = transforms.Compose([
+#         transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
+#         transforms.Resize((224, 224), antialias=True)
+#     ])
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#
+#
+# votes_df = (
+#             pd.read_csv('data/cleaned_votes.tsv', sep='\t')
+#             .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
+#             )
+# all_images = set(votes_df["left"]).union(set(votes_df["right"]))
+# train_images, val_images = train_test_split(list(all_images), test_size=0.25, random_state=42)
+# train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
+# val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
+#
+#
+# train_size = int(SAMPLE_SIZE * 0.75)
+# validation_size = SAMPLE_SIZE - train_size
+#
+# pp2_train = PP2Dataset(train_df, locations_path, places_path, img_dir, train_size, transform=transform)
+# pp2_validation = PP2Dataset(val_df, locations_path, places_path, img_dir, validation_size, transform=transform)
+#
+# train_dataloader = DataLoader(pp2_train, batch_size=64, shuffle=True)
+# validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
+#
+# model = resnet18(weights='DEFAULT')
+# model = RawFeat(model).to(device)
+#
+# optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+# train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
 

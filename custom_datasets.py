@@ -6,20 +6,12 @@ from torch.utils.data import Dataset, DataLoader
 pd.set_option('future.no_silent_downcasting', True)
 
 class PP2Dataset(Dataset):
-    def __init__(self, votes_path, locations_path, places_path, img_dir, transform=None):
-        #self.votes_df = pd.read_csv(votes_path, sep='\t').sample(n=5000, random_state=42)
-        self.votes_df = (
-            pd.read_csv(votes_path, sep='\t')
-            .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
-            .sample(n=5000, random_state=42)  # Randomly select 5000 rows
-        )
-        # self.votes_df = pd.read_csv(votes_path, sep='\t')
+    def __init__(self, votes_df, locations_path, places_path, img_dir, sample_amount, transform=None):
         self.locations_df = pd.read_csv(locations_path, sep='\t')
         self.places_df = pd.read_csv(places_path, sep='\t')
 
         valid_choices = ['left', 'equal', 'right']
-        self.votes_df = self.votes_df[self.votes_df['choice'].isin(valid_choices)]
-
+        self.votes_df = votes_df[votes_df['choice'].isin(valid_choices)].sample(n=sample_amount, random_state=42)
         self.votes_df['choice'] = self.votes_df['choice'].replace({'left': 1, 'right': -1, 'equal': 0})
         self.votes_df['study_id'] = self.votes_df['study_id'].replace\
             ({'50a68a51fdc9f05596000002': 'safer',
@@ -30,7 +22,7 @@ class PP2Dataset(Dataset):
              '5217c351ad93a7d3e7b07a64': 'more beautiful'
             })
 
-        self.votes_df = self.votes_df[self.votes_df['study_id'] == 'safer']
+        # self.votes_df = self.votes_df[self.votes_df['study_id'] == 'safer']
 
         self.img_labels = self.votes_df['choice']
         self.img_dir = img_dir
