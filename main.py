@@ -139,11 +139,11 @@ if __name__ == "__main__":
     # Training loop
 
     # Model
-    # model = resnet50(weights='DEFAULT')
-    # model = RawFeat(model).to(device)
-
-    model = resnet18(weights='DEFAULT')
+    model = resnet50(weights='DEFAULT')
     model = RawFeat(model).to(device)
+
+    # model = resnet18(weights='DEFAULT')
+    # model = RawFeat(model).to(device)
 
     # Optimizer
     # optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
