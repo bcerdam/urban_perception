@@ -39,8 +39,8 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
         left_scores = left_scores_batch.squeeze()
         right_scores = right_scores_batch.squeeze()
         predictions = torch.zeros_like(labels_batch.squeeze())
-        predictions[left_scores > right_scores] = -1
-        predictions[left_scores < right_scores] = 1
+        predictions[left_scores > right_scores] = 1
+        predictions[left_scores < right_scores] = -1
         predictions[torch.abs(left_scores - right_scores) < similarity_threshold] = 0
 
         correct_predictions += (predictions == labels_batch.squeeze()).sum().item()
@@ -76,8 +76,8 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             right_scores = right_scores_batch.squeeze()
             predictions = torch.zeros_like(labels_batch.squeeze())
 
-            predictions[left_scores > right_scores] = -1
-            predictions[left_scores < right_scores] = 1
+            predictions[left_scores > right_scores] = 1
+            predictions[left_scores < right_scores] = -1
             predictions[torch.abs(left_scores - right_scores) < similarity_threshold] = 0
 
             correct_predictions += (predictions == labels_batch.squeeze()).sum().item()
