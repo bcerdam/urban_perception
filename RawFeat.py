@@ -12,6 +12,7 @@ class RawFeat(nn.Module):
 
         # self.fc1 = nn.Linear(2048, 4096)
         self.fc1 = nn.Linear(512, 1024)
+        self.bn1 = nn.BatchNorm1d(1024)
         # self.fc2 = nn.Linear(4096, 1)
         self.fc2 = nn.Linear(1024, 1)
         self.relu = nn.ReLU()
@@ -25,6 +26,7 @@ class RawFeat(nn.Module):
         image_features = image_features.view(batch_size, 512)
 
         x = self.fc1(image_features)
+        x = self.bn1(x)
         x = self.relu(x)
         x = self.drop(x)
 
