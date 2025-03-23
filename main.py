@@ -25,10 +25,13 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
 
         optimizer.zero_grad()
 
-        left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
-        right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
+        # left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
+        # right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
-        loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
+        scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
+
+        # loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
+        loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 0.15, device)
 
         # gradients
         loss_batch.backward()
@@ -38,8 +41,12 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
         running_loss += loss_batch.item()
         last_loss = running_loss / (batch_idx + 1)  # loss per batch
 
-        left_scores = left_scores_batch.squeeze()
-        right_scores = right_scores_batch.squeeze()
+        # left_scores = left_scores_batch.squeeze()
+        # right_scores = right_scores_batch.squeeze()
+
+        left_scores = scores_batch[0].squeeze()
+        right_scores = scores_batch[1].squeeze()
+
         predictions = torch.zeros_like(labels_batch.squeeze())
         predictions[left_scores > right_scores] = 1
         predictions[left_scores < right_scores] = -1
@@ -66,16 +73,23 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             right_images_batch = batch[1].to(device)
             labels_batch = batch[2].unsqueeze(dim=1).to(device)
 
-            left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
-            right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
+            # left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
+            # right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
 
-            loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
+            scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
+
+            # loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
+            loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 0.15, device)
 
             running_loss += loss_batch.item()
             last_loss = running_loss / (batch_idx + 1)
 
-            left_scores = left_scores_batch.squeeze()
-            right_scores = right_scores_batch.squeeze()
+            # left_scores = left_scores_batch.squeeze()
+            # right_scores = right_scores_batch.squeeze()
+
+            left_scores = scores_batch[0].squeeze()
+            right_scores = scores_batch[1].squeeze()
+
             predictions = torch.zeros_like(labels_batch.squeeze())
 
             predictions[left_scores > right_scores] = 1
@@ -109,7 +123,7 @@ if __name__ == "__main__":
     NUM_EPOCHS = args.epochs
 
     # hp
-    SAMPLE_SIZE = 25000
+    SAMPLE_SIZE = 1000
     locations_path = 'data/cleaned_locations.tsv'
     places_path = 'data/places.tsv'
     img_dir = 'data/images'
@@ -142,10 +156,10 @@ if __name__ == "__main__":
     validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
 
     # Feature extractor
-    model = resnet50(weights='DEFAULT')
-    model = RawFeat(model).to(device)
-    # model = resnet18(weights='DEFAULT')
+    # model = resnet50(weights='DEFAULT')
     # model = RawFeat(model).to(device)
+    model = resnet18(weights='DEFAULT')
+    model = RawFeat(model).to(device)
 
     # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
@@ -154,7 +168,7 @@ if __name__ == "__main__":
 '''
 Local
 '''
-
+#
 # NUM_EPOCHS = 1
 # SAMPLE_SIZE = 100
 # locations_path = 'data/cleaned_locations.tsv'
@@ -193,5 +207,5 @@ Local
 #
 # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
-
-
+#
+#
