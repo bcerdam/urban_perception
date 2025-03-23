@@ -129,9 +129,15 @@ if __name__ == "__main__":
     img_dir = 'data/images'
 
     # CUDA
+    # transform = transforms.Compose([
+    #     transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
+    #     transforms.Resize((224, 224), antialias=True)
+    # ])
     transform = transforms.Compose([
-        transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
-        transforms.Resize((224, 224), antialias=True)
+        transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
+        transforms.Resize((224, 224), antialias=True),
+        transforms.Lambda(lambda x: x.float() / 255.0),  # Scale to [0,1]
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standardize
     ])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
