@@ -14,7 +14,7 @@ import pandas as pd
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
     running_loss = 0.
     last_loss = 0.
-    similarity_threshold = 0.15  # Tolerance for label 0
+    similarity_threshold = 1  # Tolerance for label 0
     correct_predictions = 0
     total_samples = 0
 
@@ -31,7 +31,7 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
         scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
 
         # loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
-        loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 0.15, device)
+        loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
 
         # gradients
         loss_batch.backward()
@@ -65,7 +65,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
 
     correct_predictions = 0
     total_samples = 0
-    similarity_threshold = 0.15  # Tolerance for label 0
+    similarity_threshold = 1 # Tolerance for label 0
 
     with torch.no_grad():
         for batch_idx, batch in enumerate(validation_dataloader):
@@ -79,7 +79,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
 
             # loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
-            loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 0.15, device)
+            loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
 
             running_loss += loss_batch.item()
             last_loss = running_loss / (batch_idx + 1)
