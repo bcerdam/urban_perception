@@ -61,7 +61,7 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
 
 def validate_model(epoch_index, num_epochs, validation_dataloader, device, model):
     model.eval()
-    running_loss = 0.
+    running_loss = 0. # Incluye loss de todos los batches
 
     correct_predictions = 0
     total_samples = 0
@@ -82,7 +82,7 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
 
             running_loss += loss_batch.item()
-            last_loss = running_loss / (batch_idx + 1)
+            last_loss = running_loss / (batch_idx + 1) # Loss batch acumulados / indice loss
 
             # left_scores = left_scores_batch.squeeze()
             # right_scores = right_scores_batch.squeeze()
@@ -129,10 +129,6 @@ if __name__ == "__main__":
     img_dir = 'data/images'
 
     # CUDA
-    # transform = transforms.Compose([
-    #     transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
-    #     transforms.Resize((224, 224), antialias=True)
-    # ])
     transform = transforms.Compose([
         transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
         transforms.Resize((224, 224), antialias=True),
@@ -167,8 +163,8 @@ if __name__ == "__main__":
     # model = resnet18(weights='DEFAULT')
     # model = RawFeat(model).to(device)
 
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
 '''
