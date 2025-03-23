@@ -142,12 +142,13 @@ if __name__ == "__main__":
     validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
 
     # Feature extractor
-    # model = resnet50(weights='DEFAULT')
-    # model = RawFeat(model).to(device)
-    model = resnet18(weights='DEFAULT')
+    model = resnet50(weights='DEFAULT')
     model = RawFeat(model).to(device)
+    # model = resnet18(weights='DEFAULT')
+    # model = RawFeat(model).to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
 '''
