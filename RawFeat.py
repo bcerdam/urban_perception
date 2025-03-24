@@ -12,7 +12,7 @@ class RawFeat(nn.Module):
 
         self.fc1 = nn.Linear(2048, 4096)
         # self.fc1 = nn.Linear(512, 1024)
-        self.bn1 = nn.BatchNorm1d(1024)
+        self.bn1 = nn.BatchNorm1d(4096)
         self.fc2 = nn.Linear(4096, 1)
         # self.fc2 = nn.Linear(1024, 1)
         self.relu = nn.ReLU()
