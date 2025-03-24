@@ -124,7 +124,7 @@ if __name__ == "__main__":
     NUM_EPOCHS = args.epochs
 
     # hp
-    SAMPLE_SIZE = 5000
+    SAMPLE_SIZE = 25000
     locations_path = 'data/cleaned_locations.tsv'
     places_path = 'data/places.tsv'
     img_dir = 'data/images'
