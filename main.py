@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
+    model.train()
     running_loss = 0.
     last_loss = 0.
     similarity_threshold = 1  # Tolerance for label 0
