@@ -124,7 +124,7 @@ if __name__ == "__main__":
     NUM_EPOCHS = args.epochs
 
     # hp
-    SAMPLE_SIZE = 25000
+    SAMPLE_SIZE = 50000
     locations_path = 'data/cleaned_locations.tsv'
     places_path = 'data/places.tsv'
     img_dir = 'data/images'
@@ -164,8 +164,8 @@ if __name__ == "__main__":
     # model = resnet18(weights='DEFAULT')
     # model = RawFeat(model).to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
 '''
