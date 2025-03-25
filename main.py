@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
-    # model.train()
+    model.train()
     running_loss = 0.
     last_loss = 0.
     similarity_threshold = 1  # Tolerance for label 0
@@ -57,7 +57,7 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
     return last_loss
 
 def validate_model(epoch_index, num_epochs, validation_dataloader, device, model):
-    # model.eval()
+    model.eval()
     running_loss = 0. # Incluye loss de todos los batches
 
     correct_predictions = 0
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     NUM_EPOCHS = args.epochs
 
     # hp
-    SAMPLE_SIZE = 1000
+    SAMPLE_SIZE = 50000
     locations_path = 'data/cleaned_locations.tsv'
     places_path = 'data/places.tsv'
     img_dir = 'data/images'
@@ -148,10 +148,7 @@ if __name__ == "__main__":
     # Feature extractor
     model = resnet50(weights='DEFAULT')
     model = RawFeat(model).to(device)
-    # model = resnet18(weights='DEFAULT')
-    # model = RawFeat(model).to(device)
 
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
@@ -162,8 +159,8 @@ if __name__ == "__main__":
 Local
 '''
 
-
-# NUM_EPOCHS = 20
+#
+# NUM_EPOCHS = 40
 # SAMPLE_SIZE = 1000
 # locations_path = 'data/cleaned_locations.tsv'
 # places_path = 'data/places.tsv'
@@ -186,7 +183,7 @@ Local
 # train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
 # val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
 #
-# train_size = int(SAMPLE_SIZE * 0.75)
+# train_size = int(SAMPLE_SIZE * 0.25)
 # validation_size = SAMPLE_SIZE - train_size
 #
 # pp2_train = PP2Dataset(train_df, locations_path, places_path, img_dir, train_size, transform=transform)
@@ -200,11 +197,6 @@ Local
 # model = resnet50(weights='DEFAULT')
 # model = RawFeat(model).to(device)
 #
-# # model = resnet18(weights='DEFAULT')
-# # model = RawFeat(model).to(device)
-#
-#
-# # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 #
 # train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
