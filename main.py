@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
-    model.train()
+    # model.train()
     running_loss = 0.
     last_loss = 0.
     similarity_threshold = 1  # Tolerance for label 0
@@ -26,12 +26,8 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
 
         optimizer.zero_grad()
 
-        # left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
-        # right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
-
         scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
 
-        # loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
         loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
 
         # gradients
@@ -61,7 +57,7 @@ def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer
     return last_loss
 
 def validate_model(epoch_index, num_epochs, validation_dataloader, device, model):
-    model.eval()
+    # model.eval()
     running_loss = 0. # Incluye loss de todos los batches
 
     correct_predictions = 0
@@ -74,19 +70,12 @@ def validate_model(epoch_index, num_epochs, validation_dataloader, device, model
             right_images_batch = batch[1].to(device)
             labels_batch = batch[2].unsqueeze(dim=1).to(device)
 
-            # left_scores_batch = model.forward(left_images_batch, left_images_batch.shape[0])
-            # right_scores_batch = model.forward(right_images_batch, right_images_batch.shape[0])
-
             scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
 
-            # loss_batch = utils.loss(left_scores_batch, right_scores_batch, labels_batch, 1, 0.15, device)
             loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
 
             running_loss += loss_batch.item()
             last_loss = running_loss / (batch_idx + 1) # Loss batch acumulados / indice loss
-
-            # left_scores = left_scores_batch.squeeze()
-            # right_scores = right_scores_batch.squeeze()
 
             left_scores = scores_batch[0].squeeze()
             right_scores = scores_batch[1].squeeze()
@@ -115,7 +104,6 @@ def train_model(num_epochs, train_dataloader, validation_dataloader, device, opt
         torch.save(model.state_dict(), checkpoint_path)
 
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
@@ -133,8 +121,7 @@ if __name__ == "__main__":
     transform = transforms.Compose([
         transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
         transforms.Resize((224, 224), antialias=True),
-        transforms.Lambda(lambda x: x.float() / 255.0),  # Scale to [0,1]
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Standardize
+        transforms.ToTensor()
     ])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -168,33 +155,36 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
 
+
+
+
 '''
 Local
 '''
-#
-# NUM_EPOCHS = 1
-# SAMPLE_SIZE = 100
+
+
+# NUM_EPOCHS = 20
+# SAMPLE_SIZE = 1000
 # locations_path = 'data/cleaned_locations.tsv'
 # places_path = 'data/places.tsv'
 # img_dir = 'data/images'
 #
-#
 # transform = transforms.Compose([
-#         transforms.Lambda(lambda img: crop_from_bottom(img, 25)),
-#         transforms.Resize((224, 224), antialias=True)
-#     ])
+#     transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
+#     transforms.Resize((224, 224), antialias=True),
+#     transforms.ToTensor()
+# ])
 # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 #
-#
+# # Datasets
 # votes_df = (
-#             pd.read_csv('data/cleaned_votes.tsv', sep='\t')
-#             .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
-#             )
+#     pd.read_csv('data/cleaned_votes.tsv', sep='\t')
+#     .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
+# )
 # all_images = set(votes_df["left"]).union(set(votes_df["right"]))
 # train_images, val_images = train_test_split(list(all_images), test_size=0.25, random_state=42)
 # train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
 # val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
-#
 #
 # train_size = int(SAMPLE_SIZE * 0.75)
 # validation_size = SAMPLE_SIZE - train_size
@@ -202,13 +192,21 @@ Local
 # pp2_train = PP2Dataset(train_df, locations_path, places_path, img_dir, train_size, transform=transform)
 # pp2_validation = PP2Dataset(val_df, locations_path, places_path, img_dir, validation_size, transform=transform)
 #
+# # Dataloaders
 # train_dataloader = DataLoader(pp2_train, batch_size=64, shuffle=True)
 # validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
 #
-# model = resnet18(weights='DEFAULT')
+# # Feature extractor
+# model = resnet50(weights='DEFAULT')
 # model = RawFeat(model).to(device)
 #
+# # model = resnet18(weights='DEFAULT')
+# # model = RawFeat(model).to(device)
+#
+#
+# # optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-4)
 # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+#
 # train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
-#
-#
+
+

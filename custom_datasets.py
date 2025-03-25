@@ -1,7 +1,7 @@
 import pandas as pd
 import os
-from utils import truncate_floats
 from torchvision.io import read_image
+from utils import truncate_floats
 from torch.utils.data import Dataset, DataLoader
 pd.set_option('future.no_silent_downcasting', True)
 
@@ -64,4 +64,3 @@ class PP2Dataset(Dataset):
             right_image = self.transform(right_image)
 
         return left_image, right_image, label, study_question, left_place_name, right_place_name
-        # return left_image, right_image, label

@@ -68,7 +68,7 @@ def crop_from_bottom(image, crop_pixels):
     image = F.to_pil_image(image)
     width, height = image.size  # Get the image dimensions
     image = image.crop((0, 0, width, height - crop_pixels))
-    return F.to_tensor(image)
+    return image
 
 def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
     # win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w)
@@ -78,7 +78,7 @@ def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w,
     # win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w * torch.abs(labels_batch))
     # tie = torch.max(torch.tensor(0, device=device), (torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t) * (1 - torch.abs(labels_batch)))
 
-    win_lose = torch.max(torch.tensor(0, device=device), -1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w * torch.abs(labels_batch))
+    win_lose = torch.max(torch.tensor(0, device=device), (-1 * labels_batch * (left_images_batch_scores - right_images_batch_scores) + m_w) * torch.abs(labels_batch))
     tie = torch.max(torch.tensor(0, device=device), (torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t) * (1 - torch.abs(labels_batch)))
 
     return torch.mean(torch.add(win_lose, tie))
