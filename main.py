@@ -19,7 +19,6 @@ def train_model(num_epochs, train_dataloader, validation_dataloader, device, opt
         os.makedirs('model_checkpoints', exist_ok=True)
         checkpoint_path = os.path.join('model_checkpoints', f"model_epoch_{epoch_index}.pth")
         torch.save(model.state_dict(), checkpoint_path)
-        print(checkpoint_path)
         validate_model(checkpoint_path, validation_dataloader, m_w, m_t, similarity_threshold)
 
 
@@ -49,8 +48,8 @@ if __name__ == "__main__":
     LEARNING_RATE = 0.001
     WEIGHT_DECAY = 0.01
     M_W = 1.0
-    M_T = 0.15
-    SIMILARITY_THRESHOLD = 0.15
+    M_T = 1
+    SIMILARITY_THRESHOLD = 1
 
     LOCATIONS_PATH = 'data/cleaned_locations.tsv'
     PLACES_PATH = 'data/places.tsv'

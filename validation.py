@@ -1,5 +1,7 @@
 import utils
 import torch
+import os
+import numpy as np
 from test import RawFeatInference
 from torchvision import models
 
@@ -54,18 +56,34 @@ def validate_model(weight_path, validation_dataloader, m_w, m_t, similarity_thre
             count_tie_label += (labels_batch.squeeze() == 0).sum().item()
 
     accuracy = (correct_predictions / total_samples) * 100
-    # print(f'Epoch: {epoch_index}/{num_epochs}, Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%')
-    print(f'Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%')
-    print(f'Left: Predichos: {count_left}, Totales: {count_left_label}')
-    print(f'Right: Predichos: {count_right}, Totales: {count_right_label}')
-    print(f'Tie: Predichos: {count_tie}, Totales: {count_tie_label}')
+    # # print(f'Epoch: {epoch_index}/{num_epochs}, Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%')
+    # print(f'Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%')
+    # print(f'Left: Predichos: {count_left}, Totales: {count_left_label}')
+    # print(f'Right: Predichos: {count_right}, Totales: {count_right_label}')
+    # print(f'Tie: Predichos: {count_tie}, Totales: {count_tie_label}')
     total = count_left_label + count_right_label + count_tie_label
-    print(f'Left: {count_left/total} -> {count_left_label/total}, Right: {count_right/total} -> {count_right_label/total}, Tie: {count_tie/total} -> {count_tie_label/total}')
-    print('-----------------')
+    # print(f'Left: {count_left/total} -> {count_left_label/total}, Right: {count_right/total} -> {count_right_label/total}, Tie: {count_tie/total} -> {count_tie_label/total}')
+    # print('-----------------')
 
+    output = (f'Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%\n'
+              f'Left: Predichos: {count_left}, Totales: {count_left_label}, Diff: {np.abs(count_left-count_left_label)}\n'
+              f'Right: Predichos: {count_right}, Totales: {count_right_label}, Diff: {np.abs(count_right-count_right_label)}\n'
+              f'Tie: Predichos: {count_tie}, Totales: {count_tie_label}, Diff: {np.abs(count_tie-count_tie_label)}\n'
+              f'Left: {count_left / total:.4f} -> {count_left_label / total:.4f} '
+              f'Right: {count_right / total:.4f} -> {count_right_label / total:.4f}, '
+              f'Tie: {count_tie / total:.4f} -> {count_tie_label / total:.4f}\n'
+              '-----------------\n')
 
+    print(output)
 
+    # Ensure 'status' directory exists
+    status_dir = "status"
+    os.makedirs(status_dir, exist_ok=True)
 
+    # Append results to 'status.txt'
+    status_file = os.path.join(status_dir, "status.txt")
+    with open(status_file, "a") as f:
+        f.write(output)
 
 # def validate_model(epoch_index, num_epochs, validation_dataloader, device, model, m_w, m_t, similarity_threshold):
 #     model.eval()
