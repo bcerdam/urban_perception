@@ -3,202 +3,83 @@ import utils
 import argparse
 import os
 from torchvision.models import resnet50, resnet18
-from utils import crop_from_bottom, plot_tuple
-from custom_datasets import PP2Dataset
-from RawFeat import RawFeat
+from pp2 import PP2Dataset
+from raw_feat import RawFeat
+from raw_feat_reg import RawFeatReg
 from torch.utils.data import DataLoader
-from torchvision import transforms
-from sklearn.model_selection import train_test_split
-import pandas as pd
+from train import train_one_epoch
+from validation import validate_model
 
-def train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model):
-    model.train()
-    running_loss = 0.
-    last_loss = 0.
-    similarity_threshold = 1  # Tolerance for label 0
-    correct_predictions = 0
-    total_samples = 0
 
-    for batch_idx, batch in enumerate(train_dataloader):
-        left_images_batch = batch[0].to(device)
-        right_images_batch = batch[1].to(device)
-        labels_batch = batch[2].unsqueeze(dim=1).to(device)
-
-        optimizer.zero_grad()
-
-        scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
-
-        loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
-
-        # gradients
-        loss_batch.backward()
-        # update weights
-        optimizer.step()
-
-        running_loss += loss_batch.item()
-        last_loss = running_loss / (batch_idx + 1)  # loss per batch
-
-        # left_scores = left_scores_batch.squeeze()
-        # right_scores = right_scores_batch.squeeze()
-
-        left_scores = scores_batch[0].squeeze()
-        right_scores = scores_batch[1].squeeze()
-
-        predictions = torch.zeros_like(labels_batch.squeeze())
-        predictions[left_scores > right_scores] = 1
-        predictions[left_scores < right_scores] = -1
-        predictions[torch.abs(left_scores - right_scores) < similarity_threshold] = 0
-
-        correct_predictions += (predictions == labels_batch.squeeze()).sum().item()
-        total_samples += labels_batch.squeeze().shape[0]
-
-    accuracy = (correct_predictions / total_samples) * 100
-    print(f'Epoch: {epoch_index}/{num_epochs}, Train Loss: {last_loss}, Train Accuracy: {accuracy:.2f}%')
-    return last_loss
-
-def validate_model(epoch_index, num_epochs, validation_dataloader, device, model):
-    model.eval()
-    running_loss = 0. # Incluye loss de todos los batches
-
-    correct_predictions = 0
-    total_samples = 0
-    similarity_threshold = 1 # Tolerance for label 0
-
-    with torch.no_grad():
-        for batch_idx, batch in enumerate(validation_dataloader):
-            left_images_batch = batch[0].to(device)
-            right_images_batch = batch[1].to(device)
-            labels_batch = batch[2].unsqueeze(dim=1).to(device)
-
-            scores_batch = model.forward(left_images_batch, right_images_batch, left_images_batch.shape[0], right_images_batch.shape[0])
-
-            loss_batch = utils.loss(scores_batch[0], scores_batch[1], labels_batch, 1, 1, device)
-
-            running_loss += loss_batch.item()
-            last_loss = running_loss / (batch_idx + 1) # Loss batch acumulados / indice loss
-
-            left_scores = scores_batch[0].squeeze()
-            right_scores = scores_batch[1].squeeze()
-
-            predictions = torch.zeros_like(labels_batch.squeeze())
-
-            predictions[left_scores > right_scores] = 1
-            predictions[left_scores < right_scores] = -1
-            predictions[torch.abs(left_scores - right_scores) < similarity_threshold] = 0
-
-            correct_predictions += (predictions == labels_batch.squeeze()).sum().item()
-            total_samples += labels_batch.squeeze().shape[0]
-
-    accuracy = (correct_predictions / total_samples) * 100
-    print(f'Epoch: {epoch_index}/{num_epochs}, Validation Loss: {last_loss}, Validation Accuracy: {accuracy:.2f}%')
-
-    return last_loss
-
-def train_model(num_epochs, train_dataloader, validation_dataloader, device, optimizer, model):
+def train_model(num_epochs, train_dataloader, validation_dataloader, device, optimizer, model, m_w, m_t, similarity_threshold):
     for epoch_index in range(1, num_epochs + 1):
-        train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model)
-        validate_model(epoch_index, num_epochs, validation_dataloader, device, model)
+        train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model, m_w, m_t, similarity_threshold)
+        # validate_model(epoch_index, num_epochs, validation_dataloader, device, model, m_w, m_t, similarity_threshold)
 
         os.makedirs('model_checkpoints', exist_ok=True)
         checkpoint_path = os.path.join('model_checkpoints', f"model_epoch_{epoch_index}.pth")
         torch.save(model.state_dict(), checkpoint_path)
+        print(checkpoint_path)
+        validate_model(checkpoint_path, validation_dataloader, m_w, m_t, similarity_threshold)
 
 
+
+#
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
     parser.add_argument('--epochs', type=int, required=True, help="Number of epochs to train the model")
+    parser.add_argument('--votes_sample_size', type=int, required=True, help="Number of votes samples")
+    parser.add_argument('--model', type=str, required=True, help='RawFeat or RawFeatReg')
     args = parser.parse_args()
-    NUM_EPOCHS = args.epochs
 
-    # hp
-    SAMPLE_SIZE = 100000
-    locations_path = 'data/cleaned_locations.tsv'
-    places_path = 'data/places.tsv'
-    img_dir = 'data/images'
+    NUM_EPOCHS = args.epochs
+    VOTES_SAMPLE_SIZE = args.votes_sample_size
+    MODEL = args.model
+
+    # NUM_EPOCHS = 40
+    # VOTES_SAMPLE_SIZE = 1000
+    # MODEL = 'stock'
+
+    IMAGE_TEST_SIZE = 0.25
+    TRAIN_SIZE = int(VOTES_SAMPLE_SIZE * 0.75)
+    VALIDATION_SIZE = VOTES_SAMPLE_SIZE - TRAIN_SIZE
+    BATCH_SIZE = 64
+
+    LEARNING_RATE = 0.001
+    WEIGHT_DECAY = 0.01
+    M_W = 1.0
+    M_T = 0.15
+    SIMILARITY_THRESHOLD = 0.15
+
+    LOCATIONS_PATH = 'data/cleaned_locations.tsv'
+    PLACES_PATH = 'data/places.tsv'
+    IMG_PATH = 'data/images'
+    VOTES_PATH = 'data/cleaned_votes.tsv'
 
     # CUDA
-    transform = transforms.Compose([
-        transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
-        transforms.Resize((224, 224), antialias=True),
-        transforms.ToTensor()
-    ])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Datasets
-    votes_df = (
-        pd.read_csv('data/cleaned_votes.tsv', sep='\t')
-        .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
-    )
-    all_images = set(votes_df["left"]).union(set(votes_df["right"]))
-    train_images, val_images = train_test_split(list(all_images), test_size=0.25, random_state=42)
-    train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
-    val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
-
-    train_size = int(SAMPLE_SIZE * 0.75)
-    validation_size = SAMPLE_SIZE - train_size
-
-    pp2_train = PP2Dataset(train_df, locations_path, places_path, img_dir, train_size, transform=transform)
-    pp2_validation = PP2Dataset(val_df, locations_path, places_path, img_dir, validation_size, transform=transform)
+    train_df, val_df = utils.unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE)
+    pp2_train = PP2Dataset(train_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, TRAIN_SIZE, transform=utils.transform())
+    pp2_validation = PP2Dataset(val_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, VALIDATION_SIZE,
+                                transform=utils.transform())
 
     # Dataloaders
-    train_dataloader = DataLoader(pp2_train, batch_size=64, shuffle=True)
-    validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
+    train_dataloader = DataLoader(pp2_train, batch_size=BATCH_SIZE, shuffle=True)
+    validation_dataloader = DataLoader(pp2_validation, batch_size=BATCH_SIZE, shuffle=True)
 
-    # Feature extractor
-    model = resnet50(weights='DEFAULT')
-    model = RawFeat(model).to(device)
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
-
-
-
-
-'''
-Local
-'''
-
-#
-# NUM_EPOCHS = 40
-# SAMPLE_SIZE = 1000
-# locations_path = 'data/cleaned_locations.tsv'
-# places_path = 'data/places.tsv'
-# img_dir = 'data/images'
-#
-# transform = transforms.Compose([
-#     transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
-#     transforms.Resize((224, 224), antialias=True),
-#     transforms.ToTensor()
-# ])
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#
-# # Datasets
-# votes_df = (
-#     pd.read_csv('data/cleaned_votes.tsv', sep='\t')
-#     .query("study_id == '50a68a51fdc9f05596000002'")  # Filter by study_id
-# )
-# all_images = set(votes_df["left"]).union(set(votes_df["right"]))
-# train_images, val_images = train_test_split(list(all_images), test_size=0.25, random_state=42)
-# train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
-# val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
-#
-# train_size = int(SAMPLE_SIZE * 0.25)
-# validation_size = SAMPLE_SIZE - train_size
-#
-# pp2_train = PP2Dataset(train_df, locations_path, places_path, img_dir, train_size, transform=transform)
-# pp2_validation = PP2Dataset(val_df, locations_path, places_path, img_dir, validation_size, transform=transform)
-#
-# # Dataloaders
-# train_dataloader = DataLoader(pp2_train, batch_size=64, shuffle=True)
-# validation_dataloader = DataLoader(pp2_validation, batch_size=64, shuffle=True)
-#
-# # Feature extractor
-# model = resnet50(weights='DEFAULT')
-# model = RawFeat(model).to(device)
-#
-# optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-#
-# train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model)
+    # model (feature extractor + FC)
+    if MODEL == 'RawFeat':
+        model = resnet50(weights='DEFAULT')
+        model = RawFeat(model).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
+    elif MODEL == 'RawFeatReg':
+        model = resnet18(weights='DEFAULT')
+        model = RawFeatReg(model).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
 
 

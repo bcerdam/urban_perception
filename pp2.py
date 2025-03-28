@@ -5,6 +5,7 @@ from utils import truncate_floats
 from torch.utils.data import Dataset, DataLoader
 pd.set_option('future.no_silent_downcasting', True)
 
+
 class PP2Dataset(Dataset):
     def __init__(self, votes_df, locations_path, places_path, img_dir, sample_amount, transform=None):
         self.locations_df = pd.read_csv(locations_path, sep='\t')

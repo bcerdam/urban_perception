@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
 import torch
 from torchvision.transforms import functional as F
+import torch.nn as nn
+from torchvision import transforms
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
 
 def truncate_floats(value):
@@ -69,17 +73,57 @@ def crop_from_bottom(image, crop_pixels):
     image = image.crop((0, 0, width, height - crop_pixels))
     return image
 
+
 def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
+    labels_batch = labels_batch.float()  # Ensure it's float for gradients
+    m_w = float(m_w)
+    m_t = float(m_t)
+
     diff = left_images_batch_scores - right_images_batch_scores
-    diff_adj_w = (-1 * labels_batch * (diff) + m_w)
+    diff_adj_w = (-1 * labels_batch*diff + m_w)
     diff_win_w = diff_adj_w * torch.abs(labels_batch)
 
     diff_adj_t = torch.abs(diff) - m_t
     diff_tie_t = diff_adj_t * (1 - torch.abs(labels_batch))
 
-    win_lose = torch.max(torch.tensor(0, device=device), diff_win_w)
-    tie = torch.max(torch.tensor(0, device=device), diff_tie_t)
+    win_lose = torch.max(torch.tensor(0.0, device=device), diff_win_w)
+    tie = torch.max(torch.tensor(0.0, device=device), diff_tie_t)
 
     return torch.mean(torch.add(win_lose, tie))
 
 
+def custom_loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
+    # Convert labels to float (if needed)
+    labels_batch = labels_batch.float()
+
+    # MarginRankingLoss for win/lose scenario
+    margin_loss_fn = nn.MarginRankingLoss(margin=m_w, reduction='none')  # Keep element-wise loss
+    win_lose = margin_loss_fn(left_images_batch_scores, right_images_batch_scores, labels_batch)
+
+    # Tie scenario (custom)
+    # diff_adj_t = torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t
+    # diff_tie_t = diff_adj_t * (1 - torch.abs(labels_batch))
+    # tie = torch.max(torch.tensor(0.0, device=device), diff_tie_t)
+    huber_loss_fn = nn.SmoothL1Loss(beta=m_t, reduction='none')
+    tie = huber_loss_fn(left_images_batch_scores, right_images_batch_scores) * (1 - torch.abs(labels_batch))
+
+    # Combine and return mean loss
+    return torch.mean(win_lose + tie)
+
+
+def transform():
+    transform_img = transforms.Compose([
+        transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
+        transforms.Resize((224, 224), antialias=True),
+        transforms.ToTensor()
+    ])
+    return transform_img
+
+
+def unique_images_votes_df(votes_path, test_size, random_state=42):
+    votes_df = (pd.read_csv(votes_path, sep='\t').query("study_id == '50a68a51fdc9f05596000002'"))  # Filter by study_id)
+    all_images = set(votes_df["left"]).union(set(votes_df["right"]))
+    train_images, val_images = train_test_split(list(all_images), test_size=test_size, random_state=random_state)
+    train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
+    val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
+    return train_df, val_df

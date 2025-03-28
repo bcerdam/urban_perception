@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class RawFeat(nn.Module):
     def __init__(self, model):
         super(RawFeat, self).__init__()
@@ -14,10 +15,6 @@ class RawFeat(nn.Module):
         self.drop = nn.Dropout(0.3)
 
     def forward(self, left_images_batch, right_images_batch, left_batch_size, right_batch_size):
-
-        '''
-        Parallel Pass
-        '''
 
         left_image_features = self.resnet50_4f(left_images_batch)
         left_image_features = left_image_features.view(left_batch_size, 2048)
