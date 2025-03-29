@@ -1,26 +1,11 @@
 import matplotlib.pyplot as plt
 import torch
-from torchvision.transforms import functional as F
 import torch.nn as nn
-from torchvision import transforms
-import pandas as pd
-from sklearn.model_selection import train_test_split
-
-
-def truncate_floats(value):
-    value_str = str(value)
-    if '.' in value_str:
-        # Find the decimal point and check the number of digits after it
-        decimal_index = value_str.find('.')
-        digits_after_dot = len(value_str) - decimal_index - 1
-        if digits_after_dot < 6:
-            # Add zeros to make it exactly 6 digits after the dot
-            value_str += '0' * (6 - digits_after_dot)
-        else:
-            # Truncate to 6 digits after the dot
-            value_str = value_str[:decimal_index + 7]
-        return value_str
-
+import numpy as np
+import os
+from raw_feat import RawFeatInference
+from raw_feat_reg import RawFeatRegInference
+from torchvision import models
 
 def plot_tuple(data):
     """
@@ -67,13 +52,6 @@ def plot_tuple(data):
     plt.show()
 
 
-def crop_from_bottom(image, crop_pixels):
-    image = F.to_pil_image(image)
-    width, height = image.size  # Get the image dimensions
-    image = image.crop((0, 0, width, height - crop_pixels))
-    return image
-
-
 def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
     labels_batch = labels_batch.float()  # Ensure it's float for gradients
     m_w = float(m_w)
@@ -89,41 +67,120 @@ def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w,
     win_lose = torch.max(torch.tensor(0.0, device=device), diff_win_w)
     tie = torch.max(torch.tensor(0.0, device=device), diff_tie_t)
 
-    return torch.mean(torch.add(win_lose, tie))
+    comb = torch.add(win_lose, tie)
+    comb_mean = torch.mean(comb)
+    return comb_mean
 
 
-def custom_loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
-    # Convert labels to float (if needed)
-    labels_batch = labels_batch.float()
+def metrics(dataset, inference_model, m_w, m_t, similarity_threshold, weight_path, epoch_index):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # MarginRankingLoss for win/lose scenario
-    margin_loss_fn = nn.MarginRankingLoss(margin=m_w, reduction='none')  # Keep element-wise loss
-    win_lose = margin_loss_fn(left_images_batch_scores, right_images_batch_scores, labels_batch)
+    if inference_model == "RawFeat":
+        resnet50 = models.resnet50(weights='DEFAULT')
+        model = RawFeatInference(resnet50, weight_path)
+        model.to(device)
+        model.eval()
+    elif inference_model == 'RawFeatReg':
+        resnet18 = models.resnet18(weights='DEFAULT')
+        model = RawFeatRegInference(resnet18, weight_path)
+        model.to(device)
+        model.eval()
+    elif type(inference_model) != str:
+        model = inference_model
+        model.to(device)
+        model.eval()
 
-    # Tie scenario (custom)
-    # diff_adj_t = torch.abs(left_images_batch_scores - right_images_batch_scores) - m_t
-    # diff_tie_t = diff_adj_t * (1 - torch.abs(labels_batch))
-    # tie = torch.max(torch.tensor(0.0, device=device), diff_tie_t)
-    huber_loss_fn = nn.SmoothL1Loss(beta=m_t, reduction='none')
-    tie = huber_loss_fn(left_images_batch_scores, right_images_batch_scores) * (1 - torch.abs(labels_batch))
+    running_loss = 0.0
+    total = 0
+    count_left = 0
+    count_right = 0
+    count_tie = 0
 
-    # Combine and return mean loss
-    return torch.mean(win_lose + tie)
+    count_left_label = 0
+    count_right_label = 0
+    count_tie_label = 0
+    with torch.no_grad():
+        for vote in dataset:
+            left_image = vote[0].to(device)
+            right_image = vote[1].to(device)
+            label = torch.tensor(vote[2])
+
+            if type(inference_model) != str:
+                scores = model.forward(left_image.unsqueeze(0), right_image.unsqueeze(0), 1, 1)
+                left_score = scores[0]
+                right_score = scores[1]
+                loss_value = loss(left_score, right_score, label, m_w, m_t, device)
+                split = 'Train'
+            else:
+                left_score = model.forward(left_image.unsqueeze(0))
+                right_score = model.forward(right_image.unsqueeze(0))
+                loss_value = loss(left_score, right_score, label, m_w, m_t, device)
+                split = 'Validation'
+
+            running_loss += loss_value
+
+            if label == 1:
+                count_left_label += 1
+                if left_score > right_score:
+                    count_left += 1
+                    total += 1
+                else:
+                    total += 1
+            elif label == -1:
+                count_right_label += 1
+                if left_score < right_score:
+                    count_right += 1
+                    total += 1
+                else:
+                    total += 1
+            elif label == 0:
+                count_tie_label += 1
+                if np.abs(left_score.item() - right_score.item()) < similarity_threshold:
+                    count_tie += 1
+                    total += 1
+                else:
+                    total += 1
+
+    accuracy = ((count_left+count_right+count_tie)/len(dataset))
+
+    if split == 'Train':
+        output = (f'Epoch {epoch_index}\n'
+                  f'{split} Loss: {running_loss/len(dataset)}, {split} Accuracy: {accuracy}\n'
+                  f'Left: Predichos: {count_left}, Totales: {count_left_label}, Diff: {np.abs(count_left-count_left_label)}\n'
+                  f'Right: Predichos: {count_right}, Totales: {count_right_label}, Diff: {np.abs(count_right-count_right_label)}\n'
+                  f'Tie: Predichos: {count_tie}, Totales: {count_tie_label}, Diff: {np.abs(count_tie-count_tie_label)}\n'
+                  f'Left: {count_left / total:.4f} -> {count_left_label / total:.4f} '
+                  f'Right: {count_right / total:.4f} -> {count_right_label / total:.4f}, '
+                  f'Tie: {count_tie / total:.4f} -> {count_tie_label / total:.4f}\n')
+    else:
+        output = (f'{split} Loss: {running_loss / len(dataset)}, {split} Accuracy: {accuracy}\n'
+                  f'Left: Predichos: {count_left}, Totales: {count_left_label}, Diff: {np.abs(count_left - count_left_label)}\n'
+                  f'Right: Predichos: {count_right}, Totales: {count_right_label}, Diff: {np.abs(count_right - count_right_label)}\n'
+                  f'Tie: Predichos: {count_tie}, Totales: {count_tie_label}, Diff: {np.abs(count_tie - count_tie_label)}\n'
+                  f'Left: {count_left / total:.4f} -> {count_left_label / total:.4f} '
+                  f'Right: {count_right / total:.4f} -> {count_right_label / total:.4f}, '
+                  f'Tie: {count_tie / total:.4f} -> {count_tie_label / total:.4f}\n'
+                  '-----------------\n')
+
+    print(output)
+
+    # Ensure 'status' directory exists
+    status_dir = "status"
+    os.makedirs(status_dir, exist_ok=True)
+
+    # Append results to 'status.txt'
+    status_file = os.path.join(status_dir, "status.txt")
+    with open(status_file, "a") as f:
+        f.write(output)
 
 
-def transform():
-    transform_img = transforms.Compose([
-        transforms.Lambda(lambda img: crop_from_bottom(img, 25)),  # Custom crop
-        transforms.Resize((224, 224), antialias=True),
-        transforms.ToTensor()
-    ])
-    return transform_img
-
-
-def unique_images_votes_df(votes_path, test_size, random_state=42):
-    votes_df = (pd.read_csv(votes_path, sep='\t').query("study_id == '50a68a51fdc9f05596000002'"))  # Filter by study_id)
-    all_images = set(votes_df["left"]).union(set(votes_df["right"]))
-    train_images, val_images = train_test_split(list(all_images), test_size=test_size, random_state=random_state)
-    train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
-    val_df = votes_df[votes_df["left"].isin(val_images) & votes_df["right"].isin(val_images)]
-    return train_df, val_df
+def clear_directory(directory):
+    """Deletes all files inside a given directory."""
+    if os.path.exists(directory):
+        for file in os.listdir(directory):
+            file_path = os.path.join(directory, file)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error deleting {file_path}: {e}")

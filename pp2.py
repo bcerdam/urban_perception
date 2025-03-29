@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from torchvision.io import read_image
-from utils import truncate_floats
+from image_utils import truncate_floats
 from torch.utils.data import Dataset, DataLoader
 pd.set_option('future.no_silent_downcasting', True)
 
