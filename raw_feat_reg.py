@@ -9,11 +9,11 @@ class RawFeatReg(nn.Module):
         for param in self.resnet18_4f.parameters():
             param.requires_grad = False
 
-        self.fc1 = nn.Linear(512, 64)
-        self.fc2 = nn.Linear(64, 1)
-        # self.bn = nn.BatchNorm1d(1024)
+        self.fc1 = nn.Linear(512, 8)
+        self.fc2 = nn.Linear(8, 1)
+        self.bn = nn.BatchNorm1d(8)
         self.relu = nn.ReLU()
-        self.drop = nn.Dropout(0.3)
+        self.drop = nn.Dropout(0.5)
 
     def forward(self, left_images_batch, right_images_batch, left_batch_size, right_batch_size):
 
@@ -24,12 +24,12 @@ class RawFeatReg(nn.Module):
         right_image_features = right_image_features.view(right_batch_size, 512)
 
         left_image_score = self.fc1(left_image_features)
-        # left_image_score = self.bn(left_image_score)
+        left_image_score = self.bn(left_image_score)
         left_image_score = self.relu(left_image_score)
         left_image_score = self.drop(left_image_score)
 
         right_image_score = self.fc1(right_image_features)
-        # right_image_score = self.bn(right_image_score)
+        right_image_score = self.bn(right_image_score)
         right_image_score = self.relu(right_image_score)
         right_image_score = self.drop(right_image_score)
 
@@ -47,11 +47,11 @@ class RawFeatRegInference(nn.Module):
         for param in self.resnet18_4f.parameters():
             param.requires_grad = False
 
-        self.fc1 = nn.Linear(512, 64)
-        self.fc2 = nn.Linear(64, 1)
-        # self.bn = nn.BatchNorm1d(128)
+        self.fc1 = nn.Linear(512, 8)
+        self.fc2 = nn.Linear(8, 1)
+        self.bn = nn.BatchNorm1d(8)
         self.relu = nn.ReLU()
-        self.drop = nn.Dropout(0.3)
+        self.drop = nn.Dropout(0.5)
 
         # Load trained weights
         self.load_weights(weight_path)
@@ -67,7 +67,7 @@ class RawFeatRegInference(nn.Module):
         image_features = image_features.view(image_features.size(0), -1)  # Flatten
 
         image_score = self.fc1(image_features)
-        # image_score = self.bn(image_score)
+        image_score = self.bn(image_score)
         image_score = self.relu(image_score)
         image_score = self.drop(image_score)
         image_score = self.fc2(image_score)
