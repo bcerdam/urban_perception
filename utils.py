@@ -7,15 +7,20 @@ from raw_feat import RawFeatInference
 from raw_feat_reg import RawFeatRegInference
 from torchvision import models
 
-def plot_tuple(data):
+
+def plot_tuple(data, value1, value2, save_path=None):
     """
-    Plots a tuple containing two images, an integer, and a string.
+    Plots a tuple containing two images, an integer, a string, and two float values.
+    Optionally saves the plot as a PNG file.
 
     Parameters:
         data (tuple): A tuple of size 4.
                       - The first two elements are torch.Tensor images (C, H, W).
                       - The third element is an integer (1, 0, or -1).
                       - The fourth element is a string.
+        value1 (float): The float value to be displayed below the first image.
+        value2 (float): The float value to be displayed below the second image.
+        save_path (str, optional): Path to save the plot as a PNG file. If not provided, it will only plot.
     """
     # Unpack the tuple
     image1, image2, label, title_text, left_place_name, right_place_name = data
@@ -34,7 +39,7 @@ def plot_tuple(data):
     img2 = tensor_to_image(image2)
 
     # Create the plot
-    fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=300)
+    fig, ax = plt.subplots(1, 2, figsize=(12, 8), dpi=300)
 
     # Plot the first image
     ax[0].imshow(img1, cmap='gray' if img1.ndim == 2 else None)
@@ -46,12 +51,23 @@ def plot_tuple(data):
     ax[1].axis('off')
     ax[1].set_title(right_place_name)
 
+    # Add float values as text below the images
+    fig.text(0.25, 0.02, f"Score: {value1:.3f}", ha='center', fontsize=12)  # Below first image
+    fig.text(0.75, 0.02, f"Score: {value2:.3f}", ha='center', fontsize=12)  # Below second image
+
     # Set the overall title
     plt.suptitle(f"Comparison: {title_text}, {preference} was selected", fontsize=16)
+
+    # Tight layout to adjust text positioning
     plt.tight_layout()
-    plt.show()
 
-
+    # Save the plot as a PNG file if save_path is provided
+    if save_path:
+        plt.savefig(save_path, format='png', dpi=300)
+        print(f"Plot saved to {save_path}")
+    else:
+        # Show the plot if no save path is provided
+        plt.show()
 def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
     labels_batch = labels_batch.float()  # Ensure it's float for gradients
     m_w = float(m_w)
