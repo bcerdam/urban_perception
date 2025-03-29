@@ -11,7 +11,7 @@ from train import train_one_epoch
 from validation import validate_model
 
 
-def train_model(num_epochs, train_dataloader, validation_dataloader, device, optimizer, model, m_w, m_t, similarity_threshold):
+def train_model(num_epochs, train_dataloader, pp2_validation, device, optimizer, model, m_w, m_t, similarity_threshold):
     for epoch_index in range(1, num_epochs + 1):
         train_one_epoch(epoch_index, num_epochs, train_dataloader, device, optimizer, model, m_w, m_t, similarity_threshold)
         # validate_model(epoch_index, num_epochs, validation_dataloader, device, model, m_w, m_t, similarity_threshold)
@@ -19,11 +19,11 @@ def train_model(num_epochs, train_dataloader, validation_dataloader, device, opt
         os.makedirs('model_checkpoints', exist_ok=True)
         checkpoint_path = os.path.join('model_checkpoints', f"model_epoch_{epoch_index}.pth")
         torch.save(model.state_dict(), checkpoint_path)
-        validate_model(checkpoint_path, validation_dataloader, m_w, m_t, similarity_threshold)
+        # validate_model(checkpoint_path, validation_dataloader, m_w, m_t, similarity_threshold)
+        validate_model(checkpoint_path, pp2_validation, m_w, m_t, similarity_threshold)
 
 
 
-#
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     # NUM_EPOCHS = 40
     # VOTES_SAMPLE_SIZE = 1000
-    # MODEL = 'stock'
+    # MODEL = 'RawFeat'
 
     IMAGE_TEST_SIZE = 0.25
     TRAIN_SIZE = int(VOTES_SAMPLE_SIZE * 0.75)
@@ -74,11 +74,12 @@ if __name__ == "__main__":
         model = resnet50(weights='DEFAULT')
         model = RawFeat(model).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-        train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
+        train_model(NUM_EPOCHS, train_dataloader, pp2_validation, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
     elif MODEL == 'RawFeatReg':
         model = resnet18(weights='DEFAULT')
         model = RawFeatReg(model).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-        train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
+        # train_model(NUM_EPOCHS, train_dataloader, validation_dataloader, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
+        train_model(NUM_EPOCHS, train_dataloader, pp2_validation, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD)
 
 
