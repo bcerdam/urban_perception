@@ -200,3 +200,86 @@ def clear_directory(directory):
                     os.remove(file_path)
             except Exception as e:
                 print(f"Error deleting {file_path}: {e}")
+
+import re
+import pandas as pd
+import matplotlib.pyplot as plt
+import mpld3  # Required to save the plot as an interactive HTML
+
+# Function to parse the .txt file and generate plots
+def parse_and_plot_data(txt_path, plot_path):
+    # Function to parse each epoch's data
+    def parse_epoch_data(text):
+        epoch_data = {}
+
+        # Find Epoch number
+        epoch_match = re.search(r'Epoch (\d+)', text)
+        if epoch_match:
+            epoch_data['Epoch'] = int(epoch_match.group(1))
+
+        # Find Train Loss and Train Accuracy
+        train_loss_match = re.search(r'Train Loss: (\S+)', text)
+        train_accuracy_match = re.search(r'Train Accuracy: (\S+)', text)
+        if train_loss_match and train_accuracy_match:
+            epoch_data['Train Loss'] = float(train_loss_match.group(1).strip(','))
+            epoch_data['Train Accuracy'] = float(train_accuracy_match.group(1))
+
+        # Find Validation Loss and Validation Accuracy
+        val_loss_match = re.search(r'Validation Loss: (\S+)', text)
+        val_accuracy_match = re.search(r'Validation Accuracy: (\S+)', text)
+        if val_loss_match and val_accuracy_match:
+            epoch_data['Validation Loss'] = float(val_loss_match.group(1).strip(','))
+            epoch_data['Validation Accuracy'] = float(val_accuracy_match.group(1))
+
+        return epoch_data
+
+    # Read the .txt file and process each epoch
+    with open(txt_path, 'r') as f:
+        data = f.read().split('-----------------')  # Split data by epoch separator
+
+    # Process all epochs
+    epochs = []
+    for epoch_text in data:
+        if 'Epoch' in epoch_text:
+            epoch_data = parse_epoch_data(epoch_text)
+            epochs.append(epoch_data)
+
+    # Convert to DataFrame
+    df = pd.DataFrame(epochs)
+
+    # Create the figure and axis for subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(5, 5), dpi=300)
+
+    # Define colors for train and validation
+    train_color = 'blue'
+    val_color = 'red'
+
+    # Plot Train and Validation Loss
+    ax1.plot(df['Epoch'], df['Train Loss'], label='Train Loss', color=train_color, marker='o')
+    ax1.plot(df['Epoch'], df['Validation Loss'], label='Validation Loss', color=val_color, marker='x')
+    ax1.set_title('Loss', fontsize=16)
+    ax1.set_xlabel('Epoch', fontsize=12)
+    ax1.set_ylabel('Loss', fontsize=12)
+    ax1.legend()
+    ax1.grid(True)
+
+    # Plot Train and Validation Accuracy
+    ax2.plot(df['Epoch'], df['Train Accuracy'], label='Train Accuracy', color=train_color, marker='o')
+    ax2.plot(df['Epoch'], df['Validation Accuracy'], label='Validation Accuracy', color=val_color, marker='x')
+    ax2.set_title('Accuracy', fontsize=16)
+    ax2.set_xlabel('Epoch', fontsize=12)
+    ax2.set_ylabel('Accuracy', fontsize=12)
+    ax2.legend()
+    ax2.grid(True)
+
+    # Adjust the layout for a better fit
+    plt.tight_layout()
+
+    # Save the plot as an interactive .html file using mpld3
+    mpld3.save_html(fig, plot_path)
+
+    # Show the plot (optional)
+    plt.show()
+
+# Example usage:
+# parse_and_plot_data('data/Reuniones/2/25k/status.txt', 'data/Reuniones/2/25k/metrics.html')
