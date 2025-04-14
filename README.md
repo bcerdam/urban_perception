@@ -14,7 +14,6 @@ git clone https://github.com/bcerdam/urban_perception.git
 cd urban_perception
 python3 -m venv env
 source ./env/bin/activate
-pip install -e . 
 ```
 
 ## Step 2: Install requirements.
