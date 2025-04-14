@@ -30,13 +30,13 @@ For training, the PlacePulse dataset is a necessity. A preprocessed version can 
 python3 train.py --model RawFeat --epochs 5 --votes_sample_size 100 --votes_train_size_percentage 0.75 --image_test_size_percentage 0.25 --batch_size 64 --learning_rate 0.001 --m_w 1 --m_t 1 --similarity_threshold 1 --locations_path data/cleaned_locations.tsv --places_path data/places.tsv --images_path data/images --votes_path data/cleaned_votes.tsv
 ```
 
-model: Only model available right now is RawFeat.
-votes_sample_size: Samples a certain amount of votes from the votes dataset.
-votes_train_size_percentage: Train split % for the PP2 votes dataset.
-image_test_size_percentage: Test split % for the PP2 images dataset.
-m_w: Hyperparameter that models the win margin.
-m_t: Hyperparameter that models the tie margin.
-similarity_threshold: Threshold for detecting a tie between two scores.
+- **model**: Only model available right now is RawFeat.
+- **votes_sample_size**: Samples a certain amount of votes from the votes dataset.
+- **votes_train_size_percentage**: Train split % for the PP2 votes dataset.
+- **image_test_size_percentage**: Test split % for the PP2 images dataset.
+- **m_w**: Hyperparameter that models the win margin
+- **m_t**: Hyperparameter that models the tie margin.
+- **similarity_threshold**: Threshold for detecting a tie between two scores.
 
 
 ## Inference
