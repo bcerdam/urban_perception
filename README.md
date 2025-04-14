@@ -27,7 +27,7 @@ pip install -r requirements.txt
 For training, the PlacePulse dataset is a necessity. A preprocessed version can be found [here](https://youtu.be/xvFZjo5PgG0).
 
 ```console
-python3 train.py --model RawFeat --epochs 5 --votes_sample_size 100 --votes_train_size_percentage 0.75 --image_test_size_percentage 0.25 --batch_size 64 --learning_rate 0.001 --m_w 1 --m_t 1 --similarity_threshold 1 --locations_path data/cleaned_locations.tsv --places_path data/places.tsv --images_path data/images --votes_path data/cleaned_votes.tsv
+python3 train.py --model RawFeat --epochs 5 --votes_sample_size 5000 --votes_train_size_percentage 0.75 --image_test_size_percentage 0.25 --batch_size 64 --learning_rate 0.001 --m_w 1 --m_t 1 --similarity_threshold 1 --locations_path data/cleaned_locations.tsv --places_path data/places.tsv --images_path data/images --votes_path data/cleaned_votes.tsv
 ```
 
 - **model**: Only model available right now is RawFeat.
