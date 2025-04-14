@@ -47,3 +47,4 @@ python3 train.py --model RawFeat --epochs 5 --votes_sample_size 100 --votes_trai
 python3 inference.py --input_path data/test_inference_images --weights_path weights/RawFeat/model_epoch_1.pth
 ```
 
+You can find the scores on inference_results/.
