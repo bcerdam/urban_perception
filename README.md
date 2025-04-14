@@ -38,6 +38,7 @@ python3 train.py --model RawFeat --epochs 5 --votes_sample_size 5000 --votes_tra
 - **m_t**: Hyperparameter that models the tie margin.
 - **similarity_threshold**: Threshold for detecting a tie between two scores.
 
+Weight checkpoints and training/validation info can be found on model_checkpoints/.
 
 ## Inference
 
