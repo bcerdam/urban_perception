@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class RawFeat(nn.Module):
     def __init__(self, model):
         super(RawFeat, self).__init__()
@@ -35,6 +36,7 @@ class RawFeat(nn.Module):
 
         return left_image_score, right_image_score
 
+
 class RawFeatInference(nn.Module):
     def __init__(self, model, weight_path):
         super(RawFeatInference, self).__init__()
@@ -48,16 +50,14 @@ class RawFeatInference(nn.Module):
         self.drop = nn.Dropout(0.3)
         self.fc2 = nn.Linear(4096, 1)
 
-        # Load trained weights
         self.load_weights(weight_path)
 
     def load_weights(self, weight_path):
-        state_dict = torch.load(weight_path, map_location=torch.device('cuda'), weights_only=True)  # Change 'cpu' to 'cuda' if using GPU
+        state_dict = torch.load(weight_path, map_location=torch.device('cuda'), weights_only=True)
         self.fc1.load_state_dict({'weight': state_dict['fc1.weight'], 'bias': state_dict['fc1.bias']})
         self.fc2.load_state_dict({'weight': state_dict['fc2.weight'], 'bias': state_dict['fc2.bias']})
 
     def forward(self, image):
-        """ Forward pass for a single image. """
         image_features = self.resnet50_4f(image)
         image_features = image_features.view(image_features.size(0), -1)  # Flatten
 

@@ -1,10 +1,6 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import torch
 import torchvision.models as models
-
 import utils
-from raw_feat import RawFeatInference
 from raw_feat_reg import RawFeatRegInference
 from pp2 import PP2Dataset
 from image_utils import unique_images_votes_df, transform
@@ -39,7 +35,7 @@ VOTES_PATH = 'data/cleaned_votes.tsv'
 train_df, val_df = unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE)
 pp2_train = PP2Dataset(train_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, TRAIN_SIZE, transform=transform())
 pp2_validation = PP2Dataset(val_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, VALIDATION_SIZE, transform=transform())
-#
+
 
 def plot_results(idx, dataset, save_path=None):
     vote = dataset[idx]
@@ -63,7 +59,6 @@ def plot_hist(dataset, model, device, save_path=None):
     left_scores_arr = []
     right_scores_arr = []
 
-    # Collect scores from the dataset
     for vote in dataset:
         left_image_tensor = vote[0].to(device).unsqueeze(0)
         right_image_tensor = vote[1].to(device).unsqueeze(0)
@@ -74,11 +69,9 @@ def plot_hist(dataset, model, device, save_path=None):
         left_scores_arr.append(left_score)
         right_scores_arr.append(right_score)
 
-    # Determine the min and max score for the X-axis range
     min_score = min(min(left_scores_arr), min(right_scores_arr))
     max_score = max(max(left_scores_arr), max(right_scores_arr))
 
-    # Create the histogram for left scores
     left_hist = go.Histogram(
         x=left_scores_arr,
         nbinsx=30,
@@ -87,7 +80,6 @@ def plot_hist(dataset, model, device, save_path=None):
         opacity=0.7
     )
 
-    # Create the histogram for right scores
     right_hist = go.Histogram(
         x=right_scores_arr,
         nbinsx=30,
@@ -96,23 +88,19 @@ def plot_hist(dataset, model, device, save_path=None):
         opacity=0.7
     )
 
-    # Create a figure
     fig = go.Figure(data=[left_hist, right_hist])
 
-    # Update layout for the figure
     fig.update_layout(
         title="Histograms of Left and Right Scores",
         xaxis_title="Score",
         yaxis_title="Frequency",
         barmode='overlay',
         xaxis=dict(range=[min_score, max_score]),
-        template='plotly_dark',  # Optional: Use a dark theme for the plot
+        template='plotly_dark',
         showlegend=True
     )
 
-    # Show the plot
     fig.show()
 
-    # Save the plot as a .html file if a save path is provided
     if save_path:
         fig.write_html(save_path)

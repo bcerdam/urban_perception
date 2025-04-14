@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 
+
 class RawFeatReg(nn.Module):
     def __init__(self, model):
         super(RawFeatReg, self).__init__()
@@ -53,18 +54,17 @@ class RawFeatRegInference(nn.Module):
         self.relu = nn.ReLU()
         self.drop = nn.Dropout(0.5)
 
-        # Load trained weights
         self.load_weights(weight_path)
 
     def load_weights(self, weight_path):
-        state_dict = torch.load(weight_path, map_location=torch.device('cuda'), weights_only=True)  # Change 'cpu' to 'cuda' if using GPU
+        state_dict = torch.load(weight_path, map_location=torch.device('cuda'), weights_only=True)
         self.fc1.load_state_dict({'weight': state_dict['fc1.weight'], 'bias': state_dict['fc1.bias']})
         self.fc2.load_state_dict({'weight': state_dict['fc2.weight'], 'bias': state_dict['fc2.bias']})
 
     def forward(self, image):
 
         image_features = self.resnet18_4f(image)
-        image_features = image_features.view(image_features.size(0), -1)  # Flatten
+        image_features = image_features.view(image_features.size(0), -1)
 
         image_score = self.fc1(image_features)
         image_score = self.bn(image_score)

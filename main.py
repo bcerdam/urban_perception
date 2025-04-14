@@ -11,7 +11,6 @@ from train import train_one_epoch
 from validation import validate_model
 
 
-# def train_model(num_epochs, train_dataloader, pp2_validation, device, optimizer, model, m_w, m_t, similarity_threshold, inference_model, pp2_train):
 def train_model(num_epochs, train_dataloader, pp2_train, pp2_validation, device, optimizer, model, m_w, m_t, similarity_threshold, inference_model):
     for epoch_index in range(1, num_epochs + 1):
         checkpoint_path = train_one_epoch(epoch_index, train_dataloader, device, optimizer, model, m_w, m_t, similarity_threshold, pp2_train)
