@@ -31,6 +31,7 @@ python3 train.py --model RawFeat --epochs 5 --votes_sample_size 5000 --votes_tra
 ```
 
 - **model**: The only model available right now is RawFeat.
+- **perception_attribute**: Urban perception attribute which the model will learn. Default is 'safer', other attributes are: 'livelier', 'more_boring', 'wealthier', 'more_depressing', 'more_beautiful'.
 - **votes_sample_size**: Samples a certain amount of votes from the votes dataset.
 - **votes_train_size_percentage**: Train split % for the PP2 votes dataset.
 - **image_test_size_percentage**: Test split % for the PP2 images dataset.

@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Train the model with specified epochs")
     parser.add_argument('--model', type=str, required=False, help='RawFeat or RawFeatReg', default='RawFeat')
+    parser.add_argument('--perception_attribute', type=str, required=False, help='Perception attribute to learn.', default='safer')
     parser.add_argument('--epochs', type=int, required=False, help="Number of epochs to train the model", default=5)
     parser.add_argument('--votes_sample_size', type=int, required=False, help="Number of votes samples", default=5000)
     parser.add_argument('--votes_train_size_percentage', type=float, required=False, help='% of train split on votes dataset', default=0.75)
@@ -63,6 +64,7 @@ if __name__ == "__main__":
     PLACES_PATH = args.places_path
     IMG_PATH = args.images_path
     VOTES_PATH = args.votes_path
+    PERCEPTION_ATTRIBUTE = args.perception_attribute
 
     # NUM_EPOCHS = 40
     # VOTES_SAMPLE_SIZE = 1000
@@ -82,6 +84,18 @@ if __name__ == "__main__":
     # PLACES_PATH = 'data/places.tsv'
     # IMG_PATH = 'data/images'
     # VOTES_PATH = 'data/cleaned_votes.tsv'
+    # PERCEPTION_ATTRIBUTE = 'safer'
+
+    # Perception attributes
+    pattributes_dict = ({'safer': '50a68a51fdc9f05596000002',
+      'livelier': '50f62c41a84ea7c5fdd2e454',
+      'more_boring': '50f62c68a84ea7c5fdd2e456',
+      'wealthier': '50f62cb7a84ea7c5fdd2e458',
+      'more_depressing': '50f62ccfa84ea7c5fdd2e459',
+      'more_beautiful': '5217c351ad93a7d3e7b07a64'
+      })
+
+    PERCEPTION_ATTRIBUTE = pattributes_dict[PERCEPTION_ATTRIBUTE]
 
     # Split
     TRAIN_SIZE = int(VOTES_SAMPLE_SIZE * TRAIN_SIZE_PERCENTAGE)
@@ -91,7 +105,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Datasets
-    train_df, val_df = image_utils.unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE)
+    train_df, val_df = image_utils.unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE, PERCEPTION_ATTRIBUTE)
     pp2_train = PP2Dataset(train_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, TRAIN_SIZE, transform=image_utils.transform())
     pp2_validation = PP2Dataset(val_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, VALIDATION_SIZE,
                                 transform=image_utils.transform())

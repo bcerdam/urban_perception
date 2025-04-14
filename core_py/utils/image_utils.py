@@ -32,9 +32,9 @@ def transform():
     return transform_img
 
 
-def unique_images_votes_df(votes_path, test_size, random_state=42):
+def unique_images_votes_df(votes_path, test_size, study_id, random_state=42):
     votes_df = (
-        pd.read_csv(votes_path, sep='\t').query("study_id == '50a68a51fdc9f05596000002'"))
+        pd.read_csv(votes_path, sep='\t').query(f"study_id == '{study_id}'"))
     all_images = set(votes_df["left"]).union(set(votes_df["right"]))
     train_images, val_images = train_test_split(list(all_images), test_size=test_size, random_state=random_state)
     train_df = votes_df[votes_df["left"].isin(train_images) & votes_df["right"].isin(train_images)]
