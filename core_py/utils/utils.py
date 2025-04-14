@@ -5,8 +5,8 @@ import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import mpld3
-from raw_feat import RawFeatInference
-from raw_feat_reg import RawFeatRegInference
+from core_py.nets.raw_feat import RawFeatInference
+from core_py.nets.raw_feat_reg import RawFeatRegInference
 from torchvision import models
 
 
@@ -79,12 +79,12 @@ def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w,
     return comb_mean
 
 
-def metrics(dataset, inference_model, m_w, m_t, similarity_threshold, weight_path, epoch_index):
+def metrics(dataset, inference_model, m_w, m_t, similarity_threshold, weight_path, epoch_index, run_checkpoint_dir):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if inference_model == "RawFeat":
         resnet50 = models.resnet50(weights='DEFAULT')
-        model = RawFeatInference(resnet50, weight_path)
+        model = RawFeatInference(resnet50, weight_path, device)
         model.to(device)
         model.eval()
     elif inference_model == 'RawFeatReg':
@@ -171,10 +171,8 @@ def metrics(dataset, inference_model, m_w, m_t, similarity_threshold, weight_pat
 
     print(output)
 
-    status_dir = "status"
-    os.makedirs(status_dir, exist_ok=True)
-
-    status_file = os.path.join(status_dir, "status.txt")
+    os.makedirs(run_checkpoint_dir+'/status', exist_ok=True)
+    status_file = os.path.join(run_checkpoint_dir+'/status', "status.txt")
     with open(status_file, "a") as f:
         f.write(output)
 

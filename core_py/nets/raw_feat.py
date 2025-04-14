@@ -38,7 +38,7 @@ class RawFeat(nn.Module):
 
 
 class RawFeatInference(nn.Module):
-    def __init__(self, model, weight_path):
+    def __init__(self, model, weight_path, device):
         super(RawFeatInference, self).__init__()
         self.resnet50_4f = nn.Sequential(*list(model.children())[:-1])
 
@@ -50,10 +50,11 @@ class RawFeatInference(nn.Module):
         self.drop = nn.Dropout(0.3)
         self.fc2 = nn.Linear(4096, 1)
 
-        self.load_weights(weight_path)
+        self.load_weights(weight_path, device)
 
-    def load_weights(self, weight_path):
-        state_dict = torch.load(weight_path, map_location=torch.device('cuda'), weights_only=True)
+    def load_weights(self, weight_path, device):
+        # state_dict = torch.load(weight_path, map_location=torch.device('cuda'), weights_only=True)
+        state_dict = torch.load(weight_path, map_location=device, weights_only=True)
         self.fc1.load_state_dict({'weight': state_dict['fc1.weight'], 'bias': state_dict['fc1.bias']})
         self.fc2.load_state_dict({'weight': state_dict['fc2.weight'], 'bias': state_dict['fc2.bias']})
 

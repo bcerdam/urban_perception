@@ -1,9 +1,9 @@
 import torch
 import torchvision.models as models
-import utils
-from raw_feat_reg import RawFeatRegInference
-from pp2 import PP2Dataset
-from image_utils import unique_images_votes_df, transform
+from core_py.utils import utils
+from core_py.nets.raw_feat_reg import RawFeatRegInference
+from core_py.datasets.pp2 import PP2Dataset
+from core_py.utils.image_utils import unique_images_votes_df, transform
 import plotly.graph_objects as go
 
 
@@ -26,10 +26,10 @@ VOTES_SAMPLE_SIZE = 1000
 IMAGE_TEST_SIZE = 0.25
 TRAIN_SIZE = int(VOTES_SAMPLE_SIZE * 0.75)
 VALIDATION_SIZE = VOTES_SAMPLE_SIZE - TRAIN_SIZE
-LOCATIONS_PATH = 'data/cleaned_locations.tsv'
-PLACES_PATH = 'data/places.tsv'
-IMG_PATH = 'data/images'
-VOTES_PATH = 'data/cleaned_votes.tsv'
+LOCATIONS_PATH = '../../data/cleaned_locations.tsv'
+PLACES_PATH = '../../data/places.tsv'
+IMG_PATH = '../../data/images'
+VOTES_PATH = '../../data/cleaned_votes.tsv'
 
 # Datasets
 train_df, val_df = unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE)
