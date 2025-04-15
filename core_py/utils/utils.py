@@ -8,6 +8,7 @@ import mpld3
 from core_py.nets.raw_feat import RawFeatInference
 from core_py.nets.raw_feat_reg import RawFeatRegInference
 from torchvision import models
+from core_py.nets.raw_vit import RawViTInference
 
 
 def plot_tuple(data, value1, value2, save_path=None):
@@ -86,6 +87,9 @@ def metrics(dataset, inference_model, m_w, m_t, similarity_threshold, weight_pat
         resnet50 = models.resnet50(weights='DEFAULT')
         model = RawFeatInference(resnet50, weight_path, device)
         model.to(device)
+        model.eval()
+    elif inference_model == 'RawViT':
+        model = RawViTInference(weight_path, device, hf_model_name='google/vit-base-patch16-224-in21k').to(device)
         model.eval()
     elif inference_model == 'RawFeatReg':
         resnet18 = models.resnet18(weights='DEFAULT')

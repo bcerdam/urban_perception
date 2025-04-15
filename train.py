@@ -13,6 +13,8 @@ from core_py.nets.raw_feat_reg import RawFeatReg
 from torch.utils.data import DataLoader
 from core_py.pipeline.train_pipeline import train_one_epoch
 from core_py.pipeline.validation_pipeline import validate_model
+from transformers import ViTModel
+from core_py.nets.raw_vit import RawViT
 
 execution_start_time = datetime.datetime.now()
 time_based_subdir_name = execution_start_time.strftime("%d_%m_%H-%M-%S")
@@ -118,6 +120,10 @@ if __name__ == "__main__":
     if MODEL == 'RawFeat':
         model = resnet50(weights='DEFAULT')
         model = RawFeat(model).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+        train_model(NUM_EPOCHS, train_dataloader, pp2_train, pp2_validation, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD, MODEL, run_checkpoint_dir)
+    elif MODEL == 'RawViT':
+        model = RawViT(hf_model_name='google/vit-base-patch16-224-in21k').to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
         train_model(NUM_EPOCHS, train_dataloader, pp2_train, pp2_validation, device, optimizer, model, M_W, M_T, SIMILARITY_THRESHOLD, MODEL, run_checkpoint_dir)
     elif MODEL == 'RawFeatReg':
