@@ -46,13 +46,13 @@ Weight checkpoints and training/validation info can be found on model_checkpoint
 - RawFeat ('safer'): Weights can be found [here](https://drive.google.com/drive/folders/1Y_H_ZLpzu4EFxfknKRVrssycGnG-3Sct?usp=sharing).
 
 ```console
-python3 inference.py --input_path data/test_inference_images --weights_path weights/RawFeat/raw_feat_100k.pth
+python3 inference.py --model RawFeat --input_path data/test_inference_images --weights_path weights/RawFeat/raw_feat_100k.pth
 ```
 
 - RawViT ('safer'): Weights can be found [here](https://drive.google.com/drive/folders/1Y_H_ZLpzu4EFxfknKRVrssycGnG-3Sct?usp=sharing).
 
 ```console
-python3 inference.py --input_path data/test_inference_images --weights_path weights/RawViT/raw_vit_100k.pth
+python3 inference.py --model RawViT --input_path data/test_inference_images --weights_path weights/RawViT/raw_vit_100k.pth
 ```
 
 You can find the scores on inference_results/.
