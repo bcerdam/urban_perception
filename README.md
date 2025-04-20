@@ -46,11 +46,6 @@ Weight checkpoints and training/validation info can be found on model_checkpoint
 - RawFeat ('safer'): Weights can be found [here](https://drive.google.com/drive/folders/1Y_H_ZLpzu4EFxfknKRVrssycGnG-3Sct?usp=sharing).
 
 ```console
-!wget --no-check-certificate 'https://docs.google.com/uc?export=download&id=1TTRbVbiQ9KKEyjK7SvOcAXLUaXdA4oiq' -O weights/RawFeat/model_epoch_1.pth
-```
-
-
-```console
 python3 inference.py --input_path data/test_inference_images --weights_path weights/RawFeat/model_epoch_1.pth
 ```
 
