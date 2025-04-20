@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 # resnet18 = models.resnet18(weights='DEFAULT')
 
 # Weights
-weight_path = "/Users/brunocerdamardini/Desktop/repo/urban_perception/weights/RawViT_5k/model_epoch_1.pth"
+weight_path = "/Users/brunocerdamardini/Desktop/repo/urban_perception/weights/RawViT_100k/model_epoch_1.pth"
 
 # Model
 # model = RawFeatInference(resnet50, weight_path)
@@ -24,7 +24,7 @@ model.to(device)
 model.eval()
 
 SIMILARITY_THRESHOLD = 1
-VOTES_SAMPLE_SIZE = 1000
+VOTES_SAMPLE_SIZE = 2000
 IMAGE_TEST_SIZE = 0.25
 TRAIN_SIZE = int(VOTES_SAMPLE_SIZE * 0.75)
 VALIDATION_SIZE = VOTES_SAMPLE_SIZE - TRAIN_SIZE
@@ -50,12 +50,12 @@ def plot_results(idx, dataset, save_path=None):
     right_score, right_attn = model.forward(right_image_tensor)
     label = dataset[idx][2]
 
-    # utils.plot_tuple(vote, left_score, right_score, save_path=save_path)
+    # utils.plot_tuple(vote, left_score.item(), right_score.item(), save_path=save_path)
     utils.plot_tuple_with_attention(vote, left_score.item(), right_score.item(), left_attn, right_attn, save_path=save_path)
 
 
-for x in range(50):
-    plot_results(x, pp2_validation, f'/Users/brunocerdamardini/Desktop/repo/urban_perception/data/reuniones/3/RawViT_25k/val_comps/comparacion_{x}.png')
+# for x in range(50):
+#     plot_results(x, pp2_validation, f'/Users/brunocerdamardini/Desktop/repo/urban_perception/data/reuniones/3/val_with_attention_image/comparacion_{x}.png')
 
 
 def plot_hist(dataset, model, device, save_path=None):
@@ -66,11 +66,11 @@ def plot_hist(dataset, model, device, save_path=None):
         left_image_tensor = vote[0].to(device).unsqueeze(0)
         right_image_tensor = vote[1].to(device).unsqueeze(0)
 
-        left_score = model.forward(left_image_tensor).item()
-        right_score = model.forward(right_image_tensor).item()
+        left_score, left_attn = model.forward(left_image_tensor)
+        right_score, right_attn = model.forward(right_image_tensor)
 
-        left_scores_arr.append(left_score)
-        right_scores_arr.append(right_score)
+        left_scores_arr.append(left_score.item())
+        right_scores_arr.append(right_score.item())
 
     min_score = min(min(left_scores_arr), min(right_scores_arr))
     max_score = max(max(left_scores_arr), max(right_scores_arr))
@@ -107,3 +107,5 @@ def plot_hist(dataset, model, device, save_path=None):
 
     if save_path:
         fig.write_html(save_path)
+
+# plot_hist(pp2_validation, model, device, '/Users/brunocerdamardini/Desktop/repo/urban_perception/data/reuniones/3/hist.html')

@@ -129,29 +129,3 @@ class RawViTInferenceAttn_temporal(nn.Module):
         image_score = self.fc2(image_score)
 
         return image_score, outputs.attentions
-
-
-# --- Example Usage ---
-# DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# WEIGHTS = 'path/to/your/trained_fc1_fc2_weights.pth'
-# HF_MODEL = 'google/vit-base-patch16-224-in21k'
-
-# # Instantiate the model
-# inference_model = RawViTInference(weight_path=WEIGHTS, device=DEVICE, hf_model_name=HF_MODEL)
-
-# # Assume img_batch is your preprocessed input tensor on the correct device
-# # img_batch = get_preprocessed_image_batch().to(DEVICE)
-
-# # Get only the score
-# score_only = inference_model(img_batch, output_attentions=False) # Or just inference_model(img_batch)
-# print("Score:", score_only)
-
-# # Get score AND attention maps
-# score, attentions = inference_model(img_batch, output_attentions=True)
-# print("Score:", score)
-# # 'attentions' is a tuple of tensors (one per layer)
-# # e.g., access last layer attention: last_layer_attn = attentions[-1]
-# print(f"Number of attention layers returned: {len(attentions)}")
-# print(f"Shape of last layer attention: {attentions[-1].shape}")
-
-# # --- Now you can process 'attentions' for visualization ---
