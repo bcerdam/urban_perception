@@ -9,6 +9,7 @@ warnings.filterwarnings("ignore", message="TypedStorage is deprecated.*", module
 from PIL import Image
 from torchvision.models import resnet50
 from core_py.nets.raw_feat import RawFeatInference
+from core_py.nets.raw_vit import RawViTInference
 
 
 def process_image(image_path, transform, model):
@@ -25,8 +26,11 @@ def process_image(image_path, transform, model):
         score = score_tensor.item()
 
         return score, image_basename
+
+
 def main():
     parser = argparse.ArgumentParser(description="Process single image or folder for inference.")
+    parser.add_argument("--model", type=str, help="Model, RawFeat or RawViT.")
     parser.add_argument("--input_path", type=str, help="Path to a single image file or a folder containing images.")
     parser.add_argument('--weights_path', type=str, help="Path to model weights")
     args = parser.parse_args()
@@ -49,11 +53,14 @@ def main():
         T.ToTensor()
     ])
 
-    model = resnet50(weights='DEFAULT')
-    model = RawFeatInference(model, args.weights_path, device)
-    model.load_weights(args.weights_path, device)
-    model.eval()
-
+    if args.model == 'RawFeat':
+        model = resnet50(weights='DEFAULT')
+        model = RawFeatInference(model, args.weights_path, device)
+        model.load_weights(args.weights_path, device)
+        model.eval()
+    elif args.model == 'RawViT':
+        model = RawViTInference(weight_path=args.weights_path, device=device, hf_model_name='google/vit-base-patch16-224-in21k').to(device)
+        model.eval()
 
     if not os.path.exists(input_path):
         print(f"Error: Input path not found: {input_path}", file=sys.stderr)
