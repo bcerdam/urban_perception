@@ -12,36 +12,19 @@ from core_py.nets.raw_feat import RawFeatInference
 
 
 def process_image(image_path, transform, model):
-    try:
-        img = Image.open(image_path)
-        image_basename = os.path.basename(image_path)
+    image_basename = os.path.basename(image_path)
 
+    with Image.open(image_path) as img:
         if img.mode == 'RGB':
-            tensor = transform(img)
+            img_rgb = img
+        elif img.mode in ['RGBA', 'L', 'P']:
+            img_rgb = img.convert('RGB')
 
-            if tensor.shape[0] != 3:
-                print(f"Error: Image should be RGB")
-                img.close()
-                return None
+        tensor = transform(img_rgb)
+        score_tensor = model.forward(tensor.unsqueeze(0))
+        score = score_tensor.item()
 
-            score = model.forward(tensor.unsqueeze(0)).item()
-
-            img.close()
-            return score, image_basename
-        else:
-            print(f"Skipping non-RGB image (mode: {img.mode}): {os.path.basename(image_path)}")
-            img.close()
-            return None
-
-    except Exception as e:
-        print(f"Error processing image {image_path}: {e}", file=sys.stderr)
-        if 'img' in locals() and img:
-            try:
-                img.close()
-            except Exception:
-                pass
-        return None
-
+        return score, image_basename
 def main():
     parser = argparse.ArgumentParser(description="Process single image or folder for inference.")
     parser.add_argument("--input_path", type=str, help="Path to a single image file or a folder containing images.")

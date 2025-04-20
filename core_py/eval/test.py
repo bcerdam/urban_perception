@@ -2,6 +2,7 @@ import torch
 import torchvision.models as models
 from core_py.utils import utils
 from core_py.nets.raw_feat_reg import RawFeatRegInference
+from core_py.nets.raw_vit import RawViTInferenceAttn_temporal
 from core_py.datasets.pp2 import PP2Dataset
 from core_py.utils.image_utils import unique_images_votes_df, transform
 import plotly.graph_objects as go
@@ -9,15 +10,16 @@ import plotly.graph_objects as go
 
 # Feature extractor
 # resnet50 = models.resnet50(weights='DEFAULT')
-resnet18 = models.resnet18(weights='DEFAULT')
+# resnet18 = models.resnet18(weights='DEFAULT')
 
 # Weights
-weight_path = "data/model_epoch_2.pth"
+weight_path = "/Users/brunocerdamardini/Desktop/repo/urban_perception/weights/RawViT_5k/model_epoch_1.pth"
 
 # Model
 # model = RawFeatInference(resnet50, weight_path)
-model = RawFeatRegInference(resnet18, weight_path)
+# model = RawFeatRegInference(resnet18, weight_path)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = RawViTInferenceAttn_temporal(weight_path=weight_path, device=device, hf_model_name='google/vit-base-patch16-224-in21k')
 model.to(device)
 model.eval()
 
@@ -26,13 +28,13 @@ VOTES_SAMPLE_SIZE = 1000
 IMAGE_TEST_SIZE = 0.25
 TRAIN_SIZE = int(VOTES_SAMPLE_SIZE * 0.75)
 VALIDATION_SIZE = VOTES_SAMPLE_SIZE - TRAIN_SIZE
-LOCATIONS_PATH = '../../data/cleaned_locations.tsv'
-PLACES_PATH = '../../data/places.tsv'
-IMG_PATH = '../../data/images'
-VOTES_PATH = '../../data/cleaned_votes.tsv'
+LOCATIONS_PATH = '/Users/brunocerdamardini/Desktop/repo/urban_perception/data/cleaned_locations.tsv'
+PLACES_PATH = '/Users/brunocerdamardini/Desktop/repo/urban_perception/data/places.tsv'
+IMG_PATH = '/Users/brunocerdamardini/Desktop/repo/urban_perception/data/images'
+VOTES_PATH = '/Users/brunocerdamardini/Desktop/repo/urban_perception/data/cleaned_votes.tsv'
 
 # Datasets
-train_df, val_df = unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE)
+train_df, val_df = unique_images_votes_df(VOTES_PATH, IMAGE_TEST_SIZE, study_id='50a68a51fdc9f05596000002')
 pp2_train = PP2Dataset(train_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, TRAIN_SIZE, transform=transform())
 pp2_validation = PP2Dataset(val_df, LOCATIONS_PATH, PLACES_PATH, IMG_PATH, VALIDATION_SIZE, transform=transform())
 
@@ -44,15 +46,16 @@ def plot_results(idx, dataset, save_path=None):
     left_image_tensor = dataset[idx][0].to(device).unsqueeze(0)
     right_image_tensor = dataset[idx][1].to(device).unsqueeze(0)
 
-    left_score = model.forward(left_image_tensor).item()
-    right_score = model.forward(right_image_tensor).item()
+    left_score, left_attn = model.forward(left_image_tensor)
+    right_score, right_attn = model.forward(right_image_tensor)
     label = dataset[idx][2]
 
-    utils.plot_tuple(vote, left_score, right_score, save_path=save_path)
+    # utils.plot_tuple(vote, left_score, right_score, save_path=save_path)
+    utils.plot_tuple_with_attention(vote, left_score.item(), right_score.item(), left_attn, right_attn, save_path=save_path)
 
 
-# for x in range(50):
-#     plot_results(x, pp2_train, f'data/Reuniones/2/comparaciones_train/comparacion_{x}.png')
+for x in range(50):
+    plot_results(x, pp2_validation, f'/Users/brunocerdamardini/Desktop/repo/urban_perception/data/reuniones/3/RawViT_25k/val_comps/comparacion_{x}.png')
 
 
 def plot_hist(dataset, model, device, save_path=None):

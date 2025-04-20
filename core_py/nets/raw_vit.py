@@ -85,3 +85,73 @@ class RawViTInference(nn.Module):
 
         return image_score
 
+
+class RawViTInferenceAttn_temporal(nn.Module):
+    def __init__(self, weight_path, device, hf_model_name='google/vit-base-patch16-224-in21k'):
+        super(RawViTInferenceAttn_temporal, self).__init__()
+
+        self.vit = ViTModel.from_pretrained(hf_model_name)
+        self.vit.to(device)
+
+        for param in self.vit.parameters():
+            param.requires_grad = False
+
+        vit_output_dim = self.vit.config.hidden_size
+        self.fc1 = nn.Linear(vit_output_dim, 4096)
+        self.relu = nn.ReLU()
+        self.drop = nn.Dropout(0.3)
+        self.fc2 = nn.Linear(4096, 1)
+
+        self.load_weights(weight_path, device)
+
+
+    def load_weights(self, weight_path, device):
+        state_dict = torch.load(weight_path, map_location=device, weights_only=True)
+        self.fc1.load_state_dict({
+            'weight': state_dict['fc1.weight'],
+            'bias': state_dict['fc1.bias']
+        })
+        self.fc2.load_state_dict({
+            'weight': state_dict['fc2.weight'],
+            'bias': state_dict['fc2.bias']
+        })
+    def forward(self, image, output_attentions=True):
+        outputs = self.vit(
+            pixel_values=image,
+            output_attentions=output_attentions
+        )
+
+        image_features = outputs.last_hidden_state[:, 0, :]
+
+        image_score = self.fc1(image_features)
+        image_score = self.relu(image_score)
+        image_score = self.drop(image_score)
+        image_score = self.fc2(image_score)
+
+        return image_score, outputs.attentions
+
+
+# --- Example Usage ---
+# DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# WEIGHTS = 'path/to/your/trained_fc1_fc2_weights.pth'
+# HF_MODEL = 'google/vit-base-patch16-224-in21k'
+
+# # Instantiate the model
+# inference_model = RawViTInference(weight_path=WEIGHTS, device=DEVICE, hf_model_name=HF_MODEL)
+
+# # Assume img_batch is your preprocessed input tensor on the correct device
+# # img_batch = get_preprocessed_image_batch().to(DEVICE)
+
+# # Get only the score
+# score_only = inference_model(img_batch, output_attentions=False) # Or just inference_model(img_batch)
+# print("Score:", score_only)
+
+# # Get score AND attention maps
+# score, attentions = inference_model(img_batch, output_attentions=True)
+# print("Score:", score)
+# # 'attentions' is a tuple of tensors (one per layer)
+# # e.g., access last layer attention: last_layer_attn = attentions[-1]
+# print(f"Number of attention layers returned: {len(attentions)}")
+# print(f"Shape of last layer attention: {attentions[-1].shape}")
+
+# # --- Now you can process 'attentions' for visualization ---

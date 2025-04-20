@@ -60,6 +60,86 @@ def plot_tuple(data, value1, value2, save_path=None):
         print(f"Plot saved to {save_path}")
     else:
         plt.show()
+
+
+def plot_tuple_with_attention(data, value1, value2, left_attention_map, right_attention_map, save_path=None):
+    image1, image2, label, title_text, left_place_name, right_place_name = data
+
+    label_map = {1: "Left", 0: "Equal", -1: "Right"}
+    preference = label_map.get(label, "Unknown")
+
+    def preprocess_for_plot(tensor_or_array):
+        """Converts input to numpy array suitable for imshow."""
+        if isinstance(tensor_or_array, torch.Tensor):
+            # Handle tensors: permute C,H,W to H,W,C if needed, convert to numpy
+            if tensor_or_array.ndim == 3:
+                 # Remove channel dim if it's 1 (e.g., grayscale or single attention map channel)
+                if tensor_or_array.shape[0] == 1:
+                    return tensor_or_array.squeeze().cpu().numpy()
+                else: # Assume C,H,W -> H,W,C
+                    return tensor_or_array.permute(1, 2, 0).cpu().numpy()
+            else: # Assume H,W
+                 return tensor_or_array.cpu().numpy()
+        elif isinstance(tensor_or_array, np.ndarray):
+             # Handle numpy arrays: remove channel dim if it's 1
+             if tensor_or_array.ndim == 3 and tensor_or_array.shape[-1] == 1: # H,W,1
+                 return tensor_or_array.squeeze(axis=-1)
+             elif tensor_or_array.ndim == 3 and tensor_or_array.shape[0] == 1: # 1,H,W
+                 return tensor_or_array.squeeze(axis=0)
+             else: # Assume H,W or H,W,C
+                 return tensor_or_array
+        else:
+            raise TypeError(f"Input must be a torch.Tensor or np.ndarray, got {type(tensor_or_array)}")
+
+
+    img1 = preprocess_for_plot(image1)
+    img2 = preprocess_for_plot(image2)
+    attn1 = preprocess_for_plot(left_attention_map)
+    attn2 = preprocess_for_plot(right_attention_map)
+
+    # Create a 2x2 subplot grid
+    fig, ax = plt.subplots(2, 2, figsize=(12, 12), dpi=300) # Increased figure size for 2 rows
+
+    # --- Top Row: Images ---
+    ax[0, 0].imshow(img1, cmap='gray' if img1.ndim == 2 else None)
+    ax[0, 0].axis('off')
+    ax[0, 0].set_title(left_place_name)
+
+    ax[0, 1].imshow(img2, cmap='gray' if img2.ndim == 2 else None)
+    ax[0, 1].axis('off')
+    ax[0, 1].set_title(right_place_name)
+
+    # --- Bottom Row: Attention Maps ---
+    # Use a perceptually uniform colormap like 'viridis' or 'inferno'
+    im_attn1 = ax[1, 0].imshow(attn1, cmap='viridis')
+    ax[1, 0].axis('off')
+    ax[1, 0].set_title(f"Left Attention (Score: {value1:.3f})") # Include score in title
+    # Optional: Add a colorbar for the attention map
+    # fig.colorbar(im_attn1, ax=ax[1, 0], fraction=0.046, pad=0.04)
+
+
+    im_attn2 = ax[1, 1].imshow(attn2, cmap='viridis')
+    ax[1, 1].axis('off')
+    ax[1, 1].set_title(f"Right Attention (Score: {value2:.3f})") # Include score in title
+    # Optional: Add a colorbar for the attention map
+    # fig.colorbar(im_attn2, ax=ax[1, 1], fraction=0.046, pad=0.04)
+
+
+    # --- Overall Title ---
+    plt.suptitle(f"Comparison: {title_text}, {preference} was selected", fontsize=16)
+
+    # Adjust layout - might need tweaking depending on title lengths etc.
+    plt.tight_layout(rect=[0, 0, 1, 0.96]) # Adjust rect to prevent suptitle overlap
+
+    # --- Save or Show ---
+    if save_path:
+        plt.savefig(save_path, format='png', dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {save_path}")
+        plt.close(fig) # Close the figure after saving to free memory
+    else:
+        plt.show()
+
+
 def loss(left_images_batch_scores, right_images_batch_scores, labels_batch, m_w, m_t, device):
     labels_batch = labels_batch.float()
     m_w = float(m_w)
