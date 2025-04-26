@@ -35,7 +35,7 @@ python3 train.py --model RawFeat --perception_attribute safer --epochs 5 --votes
 - **votes_sample_size**: Samples a certain amount of votes from the votes dataset.
 - **votes_train_size_percentage**: Train split % for the PP2 votes dataset.
 - **image_test_size_percentage**: Test split % for the PP2 images dataset.
-- **m_w**: Hyperparameter that models the win margin
+- **m_w**: Hyperparameter that models the win margin.
 - **m_t**: Hyperparameter that models the tie margin.
 - **similarity_threshold**: Threshold for detecting a tie between two scores.
 
